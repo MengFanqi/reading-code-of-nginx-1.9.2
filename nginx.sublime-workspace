@@ -1,0 +1,723 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "nginx-1.9.2/src/os/unix/ngx_process_cycle.c",
+			"settings":
+			{
+				"buffer_size": 54975,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/os/unix/ngx_process.h",
+			"settings":
+			{
+				"buffer_size": 3584,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/os/unix/ngx_process.c",
+			"settings":
+			{
+				"buffer_size": 35992,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/demo.c",
+			"settings":
+			{
+				"buffer_size": 14881,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/os/unix/ngx_channel.c",
+			"settings":
+			{
+				"buffer_size": 6535,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/os/unix/ngx_socket.c",
+			"settings":
+			{
+				"buffer_size": 5485,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/os/unix/ngx_process_cycle.h",
+			"settings":
+			{
+				"buffer_size": 2240,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/core/ngx_string.h",
+			"settings":
+			{
+				"buffer_size": 8197,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "nginx-1.9.2/src/core/nginx.c",
+			"settings":
+			{
+				"buffer_size": 39367,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 227.0,
+		"selected_items":
+		[
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"in",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: in",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: insta",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control:in",
+				"Package Control: Install Package"
+			],
+			[
+				"Package Control: pa",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 449.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/demo.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/demo.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_channel.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_channel.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_socket.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_socket.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_files.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_channel.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_files.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_channel.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/nginx.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_cycle.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_conf_file.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_cycle.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_connection.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_connection.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/.tags",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_crc32.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/objs/ngx_modules.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/event/ngx_event.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_socket.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/event/ngx_event.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process_cycle.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/http/ngx_http.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_shmem.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_palloc.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_core.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_conf_file.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_socket.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_inet.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_shmem.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_palloc.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_list.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_array.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/http/ngx_http.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process_cycle.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_daemon.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_posix_init.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process_cycle.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/objs/ngx_auto_config.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_linux_init.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_log.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_cpuinfo.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_linux_init.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_posix_init.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_alloc.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_alloc.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_string.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_log.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/nginx.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_config.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_regex.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_darwin_init.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/阅读说明.c",
+		"/Users/didi/Documents/学习/nginx/nginx.conf",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_process_cycle.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_darwin_init.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_errno.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_errno.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_linux_config.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_posix_config.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_posix_config.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/os/unix/ngx_linux_config.h.dump",
+		"/Users/didi/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/.tags_sorted_by_file",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_md5.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_md5.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_murmurhash.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_murmurhash.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_open_file_cache.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_open_file_cache.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_output_chain.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_parse.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_parse.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_parse_time.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_parse_time.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_proxy_protocol.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_proxy_protocol.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_queue.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_queue.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_radix_tree.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_radix_tree.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_rbtree.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_rbtree.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_regex.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_resolver.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_resolver.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_rwlock.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_rwlock.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_sha1.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_shmtx.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_shmtx.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_slab.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_slab.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_spinlock.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_string.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_syslog.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_syslog.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_thread_pool.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_thread_pool.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_times.c",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_times.h",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_times.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_times.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_thread_pool.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_thread_pool.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_string.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_string.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_spinlock.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_shmtx.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_shmtx.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_resolver.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_regex.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_regex.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_rbtree.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_rbtree.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_radix_tree.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_radix_tree.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_queue.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_queue.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_parse.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_palloc.h.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_palloc.c.dump",
+		"/Users/didi/Documents/code/reading-code-of-nginx-1.9.2/nginx-1.9.2/src/core/ngx_output_chain.c.dump"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"proc",
+			"ngx_worker_process_cycle",
+			"ngx_argc",
+			"ngx_conf_file",
+			"ngx_prefix",
+			"ngx_process_options",
+			"init_cycle",
+			"old_cycle",
+			"open_files",
+			"NGINX_VAR",
+			"ngx_add_inherited_sockets",
+			"init_cycle",
+			"sockaddr",
+			"ngx_listening_t",
+			"ngx_add_inherited_sockets",
+			"ngx_conf_parse",
+			"ngx_event_core_module",
+			"ctx",
+			"commands",
+			"ctx",
+			"commands",
+			"create_conf",
+			"ngx_shm_zone_t",
+			"shared_memory",
+			"open_files",
+			"conf_ctx",
+			"ngx_module_t",
+			"mail",
+			"open",
+			"hostname",
+			"listening",
+			"listenning",
+			"open_files",
+			"nginx_path_t",
+			"conf_prefix",
+			"ngx_process",
+			"ngx_exec_new_binary",
+			"ngx_add_inherited_sockets",
+			"ngx_add_inherited_sockets\n",
+			"{\n",
+			"ngx_process_options",
+			"conf_prefix",
+			"cycle",
+			"ngx_pagesize",
+			"ngx_memalign",
+			"init_cycle",
+			"ngx_open_file",
+			"ngx_prefix",
+			"ngx_getpid",
+			"next",
+			"ngx_debug_init",
+			"ngx_cycle_t",
+			"timer_resolution",
+			"mget",
+			"645aea3559f0363abcb776fd33938f02",
+			"iso",
+			"ios",
+			"trigger",
+			"get",
+			"geg",
+			"ge",
+			"getOrder",
+			"578062284096496726",
+			"\\n",
+			"' '",
+			"\\n",
+			"n\\",
+			"\\n",
+			"||",
+			"576462524403468845",
+			"travel_id",
+			"travel_idd",
+			"3e1dc7c2b4e27c1a6dfa192210232045",
+			"576460797272190481",
+			"3e1dc7c2b4e27c1a6dfa192210232045",
+			"left_2",
+			"left_1",
+			"v1",
+			"order_id",
+			"576462261557016000",
+			"576462261557016070",
+			"left_2",
+			"right_2",
+			"left_1",
+			"right_1",
+			":",
+			"FATAL",
+			"	,",
+			",",
+			"\\n",
+			" ",
+			"\\n",
+			" ",
+			",",
+			">",
+			"1616359927699",
+			"\\t",
+			"\\n",
+			" ",
+			"\"",
+			"database",
+			"da'ta",
+			"tag_0"
+		],
+		"highlight": true,
+		"in_selection": true,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			",",
+			"",
+			"\\n",
+			"=>",
+			",",
+			"",
+			">",
+			"",
+			",\\n",
+			""
+		],
+		"reverse": true,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": false
+	},
+	"groups":
+	[
+		{
+			"selected": 0,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "nginx-1.9.2/src/os/unix/ngx_process_cycle.c",
+					"settings":
+					{
+						"buffer_size": 54975,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								15417,
+								15444
+							]
+						],
+						"settings":
+						{
+							"is_init_dirty_state": false,
+							"origin_encoding": "UTF-8",
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 8214.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "nginx-1.9.2/src/os/unix/ngx_process.h",
+					"settings":
+					{
+						"buffer_size": 3584,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1761,
+								1761
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 855.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "nginx-1.9.2/src/os/unix/ngx_process.c",
+					"settings":
+					{
+						"buffer_size": 35992,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								11206,
+								11206
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 4666.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "nginx-1.9.2/src/demo.c",
+					"settings":
+					{
+						"buffer_size": 14881,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1910,
+								1910
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1131.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "nginx-1.9.2/src/os/unix/ngx_channel.c",
+					"settings":
+					{
+						"buffer_size": 6535,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2096,
+								2097
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 52.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "nginx-1.9.2/src/os/unix/ngx_socket.c",
+					"settings":
+					{
+						"buffer_size": 5485,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								521,
+								521
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "nginx-1.9.2/src/os/unix/ngx_process_cycle.h",
+					"settings":
+					{
+						"buffer_size": 2240,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								212,
+								212
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "nginx-1.9.2/src/core/ngx_string.h",
+					"settings":
+					{
+						"buffer_size": 8197,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3826,
+								3832
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C++.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 1740.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "nginx-1.9.2/src/core/nginx.c",
+					"settings":
+					{
+						"buffer_size": 39367,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								13771,
+								13771
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/C++/C.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 6375.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"show_minimap": true,
+	"show_open_files": false,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 191.0,
+	"status_bar_visible": true
+}
