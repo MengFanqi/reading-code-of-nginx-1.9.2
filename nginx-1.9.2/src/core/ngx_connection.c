@@ -15,7 +15,7 @@ ngx_os_io_t  ngx_io; //epoll为ngx_os_io
 
 static void ngx_drain_connections(void);
 
-
+//创建一个  ngx_listening_t 结构体
 ngx_listening_t *
 ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
 {
@@ -57,7 +57,7 @@ ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
          len++;
          break;
 #endif
-    case AF_INET:
+    case AF_INET:   //socket编程只能是AF_INET
          ls->addr_text_max_len = NGX_INET_ADDRSTRLEN;
          break;
     default:
@@ -73,9 +73,9 @@ ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
     ngx_memcpy(ls->addr_text.data, text, len);
     
     ls->fd = (ngx_socket_t) -1;
-    ls->type = SOCK_STREAM;
+    ls->type = SOCK_STREAM;  //表示TCP
 
-    ls->backlog = NGX_LISTEN_BACKLOG;
+    ls->backlog = NGX_LISTEN_BACKLOG;  //允许正在通过3次握手建立TCP连接，但没有任何进程开始处理连接的最大个数，这里面=511
     ls->rcvbuf = -1;
     ls->sndbuf = -1;
 
@@ -90,7 +90,7 @@ ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
     return ls;
 }
 
-
+//clone ngx_listenging_t
 ngx_int_t
 ngx_clone_listening(ngx_conf_t *cf, ngx_listening_t *ls)
 {
@@ -127,7 +127,8 @@ ngx_clone_listening(ngx_conf_t *cf, ngx_listening_t *ls)
     return NGX_OK;
 }
 
-
+//该函数从参数cycle(后续调用ngx_init_cycle()函数后全局变量ngx_cycle会指向该参数)的listening数组中逐一对每个元素(ngx_listening_t结构)进行初始化，即初始化除fd字段外的其他的字段
+//参考：http://blog.csdn.net/livelylittlefish/article/details/7277607
 ngx_int_t
 ngx_set_inherited_sockets(ngx_cycle_t *cycle)
 {
@@ -157,7 +158,7 @@ ngx_set_inherited_sockets(ngx_cycle_t *cycle)
             return NGX_ERROR;
         }
 
-        ls[i].socklen = NGX_SOCKADDRLEN;
+        ls[i].socklen = NGX_SOCKADDRLEN; //512
         //获取socket名字，要用于判断是否有效  
         if (getsockname(ls[i].fd, ls[i].sockaddr, &ls[i].socklen) == -1) {
             ngx_log_error(NGX_LOG_CRIT, cycle->log, ngx_socket_errno,
@@ -216,7 +217,7 @@ ngx_set_inherited_sockets(ngx_cycle_t *cycle)
 
         olen = sizeof(int);
 
-        if (getsockopt(ls[i].fd, SOL_SOCKET, SO_RCVBUF, (void *) &ls[i].rcvbuf,
+        if (getsockopt(ls[i].fd, SOL_SOCKET, SO_RCVBUF, (void *) &ls[i].rcvbuf,  //获取接收缓冲区大小，并存到ls[i].rcvbuf中
                        &olen)
             == -1)
         {
@@ -229,7 +230,7 @@ ngx_set_inherited_sockets(ngx_cycle_t *cycle)
 
         olen = sizeof(int);
 
-        if (getsockopt(ls[i].fd, SOL_SOCKET, SO_SNDBUF, (void *) &ls[i].sndbuf,
+        if (getsockopt(ls[i].fd, SOL_SOCKET, SO_SNDBUF, (void *) &ls[i].sndbuf, //获取发送缓冲区大小，并存到ls[i].sndbuf中
                        &olen)
             == -1)
         {
@@ -365,7 +366,7 @@ ngx_set_inherited_sockets(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+//监听，绑定cycle中listening动态数组指定的端口，nginx的master启动时执行
 ngx_int_t
 ngx_open_listening_sockets(ngx_cycle_t *cycle)
 {
@@ -426,7 +427,7 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
                 continue;
             }
 
-            if (ls[i].inherited) {
+            if (ls[i].inherited) { //判断是否来自前一个进程
 
                 /* TODO: close on exit */
                 /* TODO: nonblocking */
@@ -435,6 +436,7 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
                 continue;
             }
 
+            /* 新建一个socket，socket(地址结构的协议族，socket类型tcp/udp，)*/  
             s = ngx_socket(ls[i].sockaddr->sa_family, ls[i].type, 0);
 
             if (s == (ngx_socket_t) -1) {
@@ -510,7 +512,7 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
             /* TODO: close on exit */
 
             if (!(ngx_event_flags & NGX_USE_IOCP_EVENT)) {
-                if (ngx_nonblocking(s) == -1) {
+                if (ngx_nonblocking(s) == -1) { //设置非阻塞
                     ngx_log_error(NGX_LOG_EMERG, log, ngx_socket_errno,
                                   ngx_nonblocking_n " %V failed, close sock:%d",
                                   &ls[i].addr_text,s);
@@ -528,6 +530,7 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
             ngx_log_debug2(NGX_LOG_DEBUG_CORE, log, 0,
                            "bind() %V #%d ", &ls[i].addr_text, s);
 
+            /* 将socket绑定到要监听的地址 */  
             if (bind(s, ls[i].sockaddr, ls[i].socklen) == -1) {
                 err = ngx_socket_errno;
 
@@ -556,7 +559,7 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
             }
 
 #if (NGX_HAVE_UNIX_DOMAIN)
-
+             /* 处理unix domain socket */  
             if (ls[i].sockaddr->sa_family == AF_UNIX) {
                 mode_t   mode;
                 u_char  *name;
@@ -577,8 +580,8 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
                 }
             }
 #endif
-
-            if (listen(s, ls[i].backlog) == -1) {
+            /* 将socket转换为监听socket，backlog指定了内核为改监听socket排队的最大值 */  
+            if (listen(s, ls[i].backlog) == -1) { 
                 ngx_log_error(NGX_LOG_EMERG, log, ngx_socket_errno,
                               "listen() to %V, backlog %d failed",
                               &ls[i].addr_text, ls[i].backlog);
@@ -593,8 +596,10 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
                 return NGX_ERROR;
             }
 
+            /* 标识是监听socket */  
             ls[i].listen = 1;
 
+            /* 设置ngx_listening_t的描述符 */  
             ls[i].fd = s;
         }
 
@@ -618,7 +623,7 @@ ngx_open_listening_sockets(ngx_cycle_t *cycle)
     return NGX_OK;
 }
 
-
+//根据nginx.conf中的配置项设置以及监听的句柄
 void
 ngx_configure_listening_sockets(ngx_cycle_t *cycle)
 {
@@ -636,6 +641,8 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
         ls[i].log = *ls[i].logp;
 
         if (ls[i].rcvbuf != -1) {
+
+            /*  设置监听socket的接收缓冲区大小  */
             if (setsockopt(ls[i].fd, SOL_SOCKET, SO_RCVBUF,
                            (const void *) &ls[i].rcvbuf, sizeof(int))
                 == -1)
@@ -647,6 +654,8 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
         }
 
         if (ls[i].sndbuf != -1) {
+        
+            /* 设置监听socket的发送缓冲区大小  */
             if (setsockopt(ls[i].fd, SOL_SOCKET, SO_SNDBUF,
                            (const void *) &ls[i].sndbuf, sizeof(int))
                 == -1)
@@ -660,6 +669,7 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
         if (ls[i].keepalive) {
             value = (ls[i].keepalive == 1) ? 1 : 0;
 
+            /* 设置监听socket保持长连接, 参考 http://blog.csdn.net/chenlycly/article/details/51790941*/
             if (setsockopt(ls[i].fd, SOL_SOCKET, SO_KEEPALIVE,
                            (const void *) &value, sizeof(int))
                 == -1)
@@ -678,7 +688,7 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
 #if (NGX_KEEPALIVE_FACTOR)
             value *= NGX_KEEPALIVE_FACTOR;
 #endif
-
+            /* 设置监听socket长连接，开始检查时间 */
             if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_KEEPIDLE,
                            (const void *) &value, sizeof(int))
                 == -1)
@@ -736,6 +746,7 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
 
 #if (NGX_HAVE_TCP_FASTOPEN)
         if (ls[i].fastopen != -1) {
+            //fastopen , 参考http://blog.csdn.net/for_tech/article/details/54237556
             if (setsockopt(ls[i].fd, IPPROTO_TCP, TCP_FASTOPEN,
                            (const void *) &ls[i].fastopen, sizeof(int))
                 == -1)
@@ -783,6 +794,10 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
 #ifdef SO_ACCEPTFILTER
 
         if (ls[i].delete_deferred) {
+            /** 
+             * set accept filter on listening socket 
+             * 将SO_ACCEPTFILTER设置为NULL，也就是删除accept filter， 影响nginx性能，可以再讨论下： http://blog.chinaunix.net/uid-26335251-id-3275667.html
+             */
             if (setsockopt(ls[i].fd, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0)
                 == -1)
             {
@@ -884,7 +899,7 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
     return;
 }
 
-
+//关闭cycle中listening动态数组已经打开的句柄
 void
 ngx_close_listening_sockets(ngx_cycle_t *cycle)
 {
@@ -1197,7 +1212,7 @@ ngx_reusable_connection(ngx_connection_t *c, ngx_uint_t reusable) //和下面的
     }
 }
 
-
+//ngx_drain_connections来释放长连接，将长连接从queue拿出来，放回到free_connections，然后再获取(32个)
 static void
 ngx_drain_connections(void)
 {

@@ -63,15 +63,15 @@ extern ngx_module_t  ngx_http_range_body_filter_module;
 extern ngx_module_t  ngx_http_not_modified_filter_module;
 
 ngx_module_t *ngx_modules[] = {
-    &ngx_core_module,
-    &ngx_errlog_module,
+    &ngx_core_module,       //核心模块
+    &ngx_errlog_module,     //核心模块
     &ngx_conf_module,
-    &ngx_events_module,
+    &ngx_events_module,     //核心模块
     &ngx_event_core_module,
     &ngx_epoll_module,
     &ngx_thread_pool_module,
     &ngx_regex_module,
-    &ngx_http_module,
+    &ngx_http_module,       //核心模块
     &ngx_http_core_module,
     &ngx_http_log_module,
     &ngx_http_upstream_module,

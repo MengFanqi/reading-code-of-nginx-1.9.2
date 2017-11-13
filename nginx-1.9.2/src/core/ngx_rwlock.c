@@ -4,6 +4,11 @@
  * Copyright (C) Nginx, Inc.
  */
 
+/**
+
+操作系统支持原子操作的情况下的自旋锁的实现, 自旋锁是非睡眠锁  http://www.cnblogs.com/sdphome/archive/2011/10/11/2206833.html
+
+**/
 
 #include <ngx_config.h>
 #include <ngx_core.h>
@@ -16,13 +21,15 @@
 #define NGX_RWLOCK_WLOCK  ((ngx_atomic_uint_t) -1)
 
 
+//获取互斥锁（非睡眠锁）
 void
-ngx_rwlock_wlock(ngx_atomic_t *lock)
+ngx_rwlock_wlock(ngx_atomic_t *lock)  //http://blog.csdn.net/zgrjkflmkyc/article/details/41649527
 {
     ngx_uint_t  i, n;
 
     for ( ;; ) {
 
+        //lock为0，表示锁没有被其他进程持有，这时将lock值设为 NGX_RWLOCK_WLOCK，表示该进程占用了锁
         if (*lock == 0 && ngx_atomic_cmp_set(lock, 0, NGX_RWLOCK_WLOCK)) {
             return;
         }
@@ -43,11 +50,12 @@ ngx_rwlock_wlock(ngx_atomic_t *lock)
             }
         }
 
-        ngx_sched_yield();
+        ngx_sched_yield();  //http://blog.csdn.net/magod/article/details/7265555
     }
 }
 
 
+//获取共享锁（非睡眠）
 void
 ngx_rwlock_rlock(ngx_atomic_t *lock)
 {
@@ -85,7 +93,7 @@ ngx_rwlock_rlock(ngx_atomic_t *lock)
     }
 }
 
-
+//释放锁（包括互斥锁和共享锁）
 void
 ngx_rwlock_unlock(ngx_atomic_t *lock)
 {
