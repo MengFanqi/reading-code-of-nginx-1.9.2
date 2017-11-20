@@ -388,6 +388,7 @@ epoll_wait返回，可以是读写事件触发返回，也可能是因为没获�
 */
     
     //linux下，普通网络套接字调用ngx_epoll_process_events函数开始处理，异步文件i/o设置事件的回调方法为ngx_epoll_eventfd_handler
+    //调用process_events钩子轮询事件，有些事件即时调用事件处理函数处理，有些事件放入延迟队列等待后面处理
     (void) ngx_process_events(cycle, timer, flags);
 
     delta = ngx_current_msec - delta; //(void) ngx_process_events(cycle, timer, flags)中epoll等待事件触发过程花费的时间

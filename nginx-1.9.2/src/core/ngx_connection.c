@@ -24,7 +24,7 @@ ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
     struct sockaddr  *sa;
     u_char            text[NGX_SOCKADDR_STRLEN];
 
-    //ngx_http_optimize_servers->ngx_http_init_listening->ngx_http_add_listening->ngx_create_listening把解析到的listen配置项信息添加到cycle->listening中
+    //ngx_http_block->ngx_http_optimize_servers->ngx_http_init_listening->ngx_http_add_listening->ngx_create_listening把解析到的listen配置项信息添加到cycle->listening中
     ls = ngx_array_push(&cf->cycle->listening);//添加到cycle对应的listening中保存listen信息
     if (ls == NULL) {
         return NULL;
@@ -82,7 +82,7 @@ ngx_create_listening(ngx_conf_t *cf, void *sockaddr, socklen_t socklen)
 #if (NGX_HAVE_SETFIB)
     ls->setfib = -1;
 #endif
-
+    //Linux TCP_FASTOPEN的作用,http://blog.csdn.net/for_tech/article/details/54237556  
 #if (NGX_HAVE_TCP_FASTOPEN)
     ls->fastopen = -1;
 #endif
@@ -772,7 +772,7 @@ ngx_configure_listening_sockets(ngx_cycle_t *cycle)
             }
         }
 #endif
-
+        //这个为啥又执行一遍？？待查
         if (ls[i].listen) {
 
             /* change backlog via listen() */
@@ -986,7 +986,7 @@ ngx_close_listening_sockets(ngx_cycle_t *cycle)
 ┃(ngx_connection_t)                    ┃                            ┃                                      ┃
 ┗━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━━━━━┛
 */
-ngx_connection_t *
+ngx_connection_t *   //只有两个地方调用，listening初始化 + accept
 ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个ngx_connection_t
 {
     ngx_uint_t         instance;
@@ -994,7 +994,7 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个
     ngx_connection_t  *c;
 
     /* disable warning: Win32 SOCKET is u_int while UNIX socket is int */
-
+    //socket不能超过最大值
     if (ngx_cycle->files && (ngx_uint_t) s >= ngx_cycle->files_n) {
         ngx_log_error(NGX_LOG_ALERT, log, 0,
                       "the new socket has number %d, "
@@ -1002,10 +1002,12 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个
                       s, ngx_cycle->files_n);
         return NULL;
     }
-
+    /* ngx_mutex_lock */  
+    //从空闲链表中拿一个connection  
     c = ngx_cycle->free_connections;
 
     if (c == NULL) {
+        //释放长连接
         ngx_drain_connections();
         c = ngx_cycle->free_connections;
     }
@@ -1021,10 +1023,13 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个
     ngx_cycle->free_connections = c->data; //指向连接池中下一个未用的节点
     ngx_cycle->free_connection_n--;
 
+    /* ngx_mutex_unlock */  
+    //存放socket 和connenction 对应的关系  
     if (ngx_cycle->files) {
         ngx_cycle->files[s] = c;
     }
 
+    //暂时保存事件，清空后再倒赋值回来  
     rev = c->read;
     wev = c->write;
 
@@ -1036,7 +1041,7 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个
     c->log = log;
 
     instance = rev->instance;
-
+    //读写事件初始化
     ngx_memzero(rev, sizeof(ngx_event_t));
     ngx_memzero(wev, sizeof(ngx_event_t));
 
@@ -1049,7 +1054,7 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个
     rev->data = c;
     wev->data = c;
 
-    wev->write = 1; //这里只是置位写事件ev为1，并没有修改读事件ev
+    wev->write = 1; //这里只是置位写事件ev为1，并没有修改读事件ev， 为啥？
 
     return c;
 }
@@ -1071,10 +1076,12 @@ ngx_get_connection(ngx_socket_t s, ngx_log_t *log) //从连接池中获取一个
 void
 ngx_free_connection(ngx_connection_t *c) //归还c到连接池中
 {
+    //放入到空闲链表中，并更新数量 
     c->data = ngx_cycle->free_connections;
     ngx_cycle->free_connections = c;
     ngx_cycle->free_connection_n++;
 
+    //删除socket 和 connection之间的关系  
     if (ngx_cycle->files) {
         ngx_cycle->files[c->fd] = NULL;
     }
@@ -1084,6 +1091,10 @@ ngx_free_connection(ngx_connection_t *c) //归还c到连接池中
 ngx_http_close_request方法是更高层的用于关闭请求的方法，当然，HTTP模块一般也不会直接调用它的。在上面几节中反复提到的引用计数，
 就是由ngx_http_close_request方法负责检测的，同时它会在引用计数清零时正式调用ngx_http_free_request方法和ngx_http_close_connection(ngx_close_connection)
 方法来释放请求、关闭连接,见ngx_http_close_request
+
+主要关闭一个connection，包括“善后”以及调用ngx_reusable_connection(c,0) ngx_free_connection来将连接放回free_connections
+可以认为是ngx_get_connection的逆操作
+
 */
 void
 ngx_close_connection(ngx_connection_t *c)
@@ -1138,6 +1149,7 @@ ngx_close_connection(ngx_connection_t *c)
     c->read->closed = 1;
     c->write->closed = 1;
 
+    //从长连接池中退出
     ngx_reusable_connection(c, 0);
 
     log_error = c->log_error;
@@ -1184,13 +1196,14 @@ ngx_close_connection(ngx_connection_t *c)
     }
 }
 
-
+//reusable=1 ，放进queue中 
+//reusable=0 ，从queue中出来 
 void
 ngx_reusable_connection(ngx_connection_t *c, ngx_uint_t reusable) //和下面的ngx_drain_connections配合
 {
     ngx_log_debug1(NGX_LOG_DEBUG_CORE, c->log, 0,
                    "reusable connection: %ui", reusable);
-
+    //一旦一个keepalive的连接正常处理了，就将其从reusable队列中移除  
     if (c->reusable) {
         ngx_queue_remove(&c->queue);
 
@@ -1199,11 +1212,14 @@ ngx_reusable_connection(ngx_connection_t *c, ngx_uint_t reusable) //和下面的
 #endif
     }
 
+    // 在ngx_http_set_keepalive中会将reusable置为1，reusable为1的直接效果
+    // 就是将该连接插到reusable_connections_queue中  
     c->reusable = reusable;
 
+    // 当reusable为0时，意味着该keepalive被正常的处理掉了，不应该被再次添加, 到reusable队列中了
     if (reusable) {
         /* need cast as ngx_cycle is volatile */
-
+        // 这里使用头插法，较新的连接靠近头部，时间越久未被处理的连接越靠尾  
         ngx_queue_insert_head((ngx_queue_t *) &ngx_cycle->reusable_connections_queue, &c->queue);
 
 #if (NGX_STAT_STUB)
@@ -1212,7 +1228,7 @@ ngx_reusable_connection(ngx_connection_t *c, ngx_uint_t reusable) //和下面的
     }
 }
 
-//ngx_drain_connections来释放长连接，将长连接从queue拿出来，放回到free_connections，然后再获取(32个)
+//ngx_drain_connections来释放长连接，将长连接从queue尾部拿出来(32个)，放回到free_connections，然后再获取
 static void
 ngx_drain_connections(void)
 {
@@ -1238,7 +1254,7 @@ ngx_drain_connections(void)
     }
 }
 
-//获取本地IP地址
+//获取本地IP地址，参考如何从一个nginx的http请求中获取server端地址，http://blog.csdn.net/marcky/article/details/6539387/
 ngx_int_t
 ngx_connection_local_sockaddr(ngx_connection_t *c, ngx_str_t *s,
     ngx_uint_t port)

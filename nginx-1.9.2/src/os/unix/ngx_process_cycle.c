@@ -1142,8 +1142,7 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data) //data表示这是第�
         }
 
         //ngx_log_debug1(NGX_LOG_DEBUG_EVENT, cycle->log, 0, "worker(%P) cycle again", ngx_pid);
-
-        ngx_event_process_init(cycle);
+        ngx_process_events_and_timers(cycle);
 
         if (ngx_terminate) { //没有关闭套接字，也没有处理为处理完的事件，而是直接exit
             ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0, "exiting");
