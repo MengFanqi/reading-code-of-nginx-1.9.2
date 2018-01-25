@@ -3258,8 +3258,7 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
         n = u->buffer.last - u->buffer.pos;
 
         /* 
-          ²»ÊÇ»¹Ã»½ÓÊÕ°üÌåÂï£¬ÎªÊ²Ã´¾Í¿ªÊ¼·¢ËÍÁËÄØ¿
-              ÕâÊÇÒòÎªÔÚÇ°ÃæµÄngx_http_upstream_process_header½ÓÊÕfastcgiÍ·²¿ĞĞ±êÊ¶°üÌå´¦ÀíµÄÊ±ºò£¬ÓĞ¿ÉÄÜ»á°ÑÒ»²¿·Öfastcgi°üÌå±êÊ¶Ò²ÊÕ¹ıÁË£¬
+          ²»ÊÇ»¹Ã»½ÓÊÕ°üÌåÂï£¬ÎªÊ²Ã´¾Í¿ªÊ¼·¢ËÍÁËÄØ              ÕâÊÇÒòÎªÔÚÇ°ÃæµÄngx_http_upstream_process_header½ÓÊÕfastcgiÍ·²¿ĞĞ±êÊ¶°üÌå´¦ÀíµÄÊ±ºò£¬ÓĞ¿ÉÄÜ»á°ÑÒ»²¿·Öfastcgi°üÌå±êÊ¶Ò²ÊÕ¹ıÁË£¬
           Òò´ËĞèÒª´¦Àí
           */
         

@@ -948,7 +948,7 @@ ngx_reap_children(ngx_cycle_t *cycle) //ngx_reap_children和ngx_signal_worker_pr
                        ngx_processes[i].respawn,
                        ngx_processes[i].just_spawn);
 
-        if (ngx_processes[i].pid == -1) {
+        if (ngx_processes[i].pid == -1) {  //为什么是-1？
             continue;
         }
 
