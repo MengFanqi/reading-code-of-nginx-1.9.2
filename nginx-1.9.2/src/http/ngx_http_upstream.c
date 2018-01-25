@@ -172,12 +172,12 @@ static ngx_int_t ngx_http_upstream_ssl_name(ngx_http_request_t *r,
     ngx_http_upstream_t *u, ngx_connection_t *c);
 #endif
 
-//脥篓鹿媒ngx_http_upstream_init_main_conf掳脩脣霉脫脨ngx_http_upstream_headers_in鲁脡脭卤脳枚hash脭脣脣茫拢卢路脜脠毛ngx_http_upstream_main_conf_t碌脛headers_in_hash脰脨
-//脮芒脨漏鲁脡脭卤脳卯脰脮禄谩赂鲁脰碌赂酶ngx_http_request_t->upstream->headers_in
-ngx_http_upstream_header_t  ngx_http_upstream_headers_in[] = { //潞贸露脣脫娄麓冒碌脛脥路虏驴脨脨脝楼脜盲脮芒脌茂脙忙碌脛脳脰露脦潞贸拢卢脳卯脰脮脫脡ngx_http_upstream_headers_in_t脌茂脙忙碌脛鲁脡脭卤脰赂脧貌
-//赂脙脢媒脳茅脡煤脨搂碌脴路陆录没ngx_http_proxy_process_header拢卢脥篓鹿媒handler(脠莽ngx_http_upstream_copy_header_line)掳脩潞贸露脣脥路虏驴脨脨碌脛脧脿鹿脴脨脜脧垄赂鲁脰碌赂酶ngx_http_request_t->upstream->headers_in脧脿鹿脴鲁脡脭卤
+//通过ngx_http_upstream_init_main_conf把所有ngx_http_upstream_headers_in成员做hash运算，放入ngx_http_upstream_main_conf_t的headers_in_hash中
+//这些成员最终会赋值给ngx_http_request_t->upstream->headers_in
+ngx_http_upstream_header_t  ngx_http_upstream_headers_in[] = { //后端应答的头部行匹配这里面的字段后，最终由ngx_http_upstream_headers_in_t里面的成员指向
+//该数组生效地方见ngx_http_proxy_process_header，通过handler(如ngx_http_upstream_copy_header_line)把后端头部行的相关信息赋值给ngx_http_request_t->upstream->headers_in相关成员
     { ngx_string("Status"),
-                 ngx_http_upstream_process_header_line, //脥篓鹿媒赂脙handler潞炉脢媒掳脩麓脫潞贸露脣路镁脦帽脝梅陆芒脦枚碌陆碌脛脥路虏驴脨脨脳脰露脦赂鲁脰碌赂酶ngx_http_upstream_headers_in_t->status
+                 ngx_http_upstream_process_header_line, //通过该handler函数把从后端服务器解析到的头部行字段赋值给ngx_http_upstream_headers_in_t->status
                  offsetof(ngx_http_upstream_headers_in_t, status),
                  ngx_http_upstream_copy_header_line, 0, 0 },
 
@@ -217,11 +217,11 @@ ngx_http_upstream_header_t  ngx_http_upstream_headers_in[] = { //潞贸露脣脫
                  offsetof(ngx_http_upstream_headers_in_t, www_authenticate),
                  ngx_http_upstream_copy_header_line, 0, 0 },
 
-//脰禄脫脨脭脷脜盲脰脙脕脣location /uri {mytest;}潞贸拢卢HTTP驴貌录脺虏脜禄谩脭脷脛鲁赂枚脟毛脟贸脝楼脜盲脕脣/uri潞贸碌梅脫脙脣眉麓娄脌铆脟毛脟贸
-    { ngx_string("Location"),  //潞贸露脣脫娄麓冒脮芒赂枚拢卢卤铆脢戮脨猫脪陋脰脴露篓脧貌
+//只有在配置了location /uri {mytest;}后，HTTP框架才会在某个请求匹配了/uri后调用它处理请求
+    { ngx_string("Location"),  //后端应答这个，表示需要重定向
                  ngx_http_upstream_process_header_line,
                  offsetof(ngx_http_upstream_headers_in_t, location),
-                 ngx_http_upstream_rewrite_location, 0, 0 }, //ngx_http_upstream_process_headers脰脨脰麓脨脨
+                 ngx_http_upstream_rewrite_location, 0, 0 }, //ngx_http_upstream_process_headers中执行
 
     { ngx_string("Refresh"),
                  ngx_http_upstream_ignore_header_line, 0,
@@ -260,7 +260,7 @@ ngx_http_upstream_header_t  ngx_http_upstream_headers_in[] = { //潞贸露脣脫
                  ngx_http_upstream_ignore_header_line, 0,
                  ngx_http_upstream_ignore_header_line, 0, 0 },
 
-    { ngx_string("Vary"), //nginx脭脷禄潞麓忙鹿媒鲁脤脰脨虏禄禄谩麓娄脌铆"Vary"脥路拢卢脦陋脕脣脠路卤拢脪禄脨漏脣陆脫脨脢媒戮脻虏禄卤禄脣霉脫脨碌脛脫脙禄搂驴麓碌陆拢卢
+    { ngx_string("Vary"), //nginx在缓存过程中不会处理"Vary"头，为了确保一些私有数据不被所有的用户看到，
                  ngx_http_upstream_process_vary, 0,
                  ngx_http_upstream_copy_header_line, 0, 0 },
 
@@ -304,51 +304,51 @@ ngx_http_upstream_header_t  ngx_http_upstream_headers_in[] = { //潞贸露脣脫
 };
 
 /*
-鹿脴脫脷nginx upstream碌脛录赂脰脰脜盲脰脙路陆脢陆
-路垄卤铆脫脷2011 脛锚 06 脭脗 16 脠脮脫脡edwin 
-脝陆脢卤脪禄脰卤脪脌脌碌脫虏录镁脌麓脳梅load blance拢卢脳卯陆眉脩脨戮驴Nginx脌麓脳枚赂潞脭脴脡猫卤赂拢卢录脟脗录脧脗upstream碌脛录赂脰脰脜盲脰脙路陆脢陆隆拢
+关于nginx upstream的几种配置方式
+发表于2011 年 06 月 16 日由edwin 
+平时一直依赖硬件来作load blance，最近研究Nginx来做负载设备，记录下upstream的几种配置方式。
 
-碌脷脪禄脰脰拢潞脗脰脩炉
+第一种：轮询
 
 upstream test{
     server 192.168.0.1:3000;
     server 192.168.0.1:3001;
-}碌脷露镁脰脰拢潞脠篓脰脴
+}第二种：权重
 
 upstream test{
     server 192.168.0.1 weight=2;
     server 192.168.0.2 weight=3;
-}脮芒脰脰脛拢脢陆驴脡陆芒戮枚路镁脦帽脝梅脨脭脛脺虏禄碌脠碌脛脟茅驴枚脧脗脗脰脩炉卤脠脗脢碌脛碌梅脜盲
+}这种模式可解决服务器性能不等的情况下轮询比率的调配
 
-碌脷脠媒脰脰拢潞ip_hash
+第三种：ip_hash
 
 upstream test{
     ip_hash;
     server 192.168.0.1;
     server 192.168.0.2;
-}脮芒脰脰脛拢脢陆禄谩赂霉戮脻脌麓脭麓IP潞脥潞贸露脣脜盲脰脙脌麓脳枚hash路脰脜盲拢卢脠路卤拢鹿脤露篓IP脰禄路脙脦脢脪禄赂枚潞贸露脣
+}这种模式会根据来源IP和后端配置来做hash分配，确保固定IP只访问一个后端
 
-碌脷脣脛脰脰拢潞fair
+第四种：fair
 
-脨猫脪陋掳虏脳掳Upstream Fair Balancer Module
+需要安装Upstream Fair Balancer Module
 
 upstream test{
     server 192.168.0.1;
     server 192.168.0.2;
     fair;
-}脮芒脰脰脛拢脢陆禄谩赂霉戮脻潞贸露脣路镁脦帽碌脛脧矛脫娄脢卤录盲脌麓路脰脜盲拢卢脧矛脫娄脢卤录盲露脤碌脛潞贸露脣脫脜脧脠路脰脜盲
+}这种模式会根据后端服务的响应时间来分配，响应时间短的后端优先分配
 
-碌脷脦氓脰脰拢潞脳脭露篓脪氓hash
+第五种：自定义hash
 
-脨猫脪陋掳虏脳掳Upstream Hash Module
+需要安装Upstream Hash Module
 
 upstream test{
     server 192.168.0.1;
     server 192.168.0.2;
     hash $request_uri;
-}脮芒脰脰脛拢脢陆驴脡脪脭赂霉戮脻赂酶露篓碌脛脳脰路没麓庐陆酶脨脨Hash路脰脜盲
+}这种模式可以根据给定的字符串进行Hash分配
 
-戮脽脤氓脫娄脫脙拢潞
+具体应用：
 
 server{
     listen 80;
@@ -358,23 +358,23 @@ server{
     location / {
         proxy_pass http://test/;
     } 
-}麓脣脥芒upstream脙驴赂枚潞贸露脣碌脛驴脡脡猫脰脙虏脦脢媒脦陋拢潞
+}此外upstream每个后端的可设置参数为：
 
-1.down: 卤铆脢戮麓脣脤篓server脭脻脢卤虏禄虏脦脫毛赂潞脭脴隆拢
-2.weight: 脛卢脠脧脦陋1拢卢weight脭陆麓贸拢卢赂潞脭脴碌脛脠篓脰脴戮脥脭陆麓贸隆拢
-3.max_fails: 脭脢脨铆脟毛脟贸脢搂掳脺碌脛麓脦脢媒脛卢脠脧脦陋1.碌卤鲁卢鹿媒脳卯麓贸麓脦脢媒脢卤拢卢路碌禄脴proxy_next_upstream脛拢驴茅露篓脪氓碌脛麓铆脦贸隆拢
-4.fail_timeout: max_fails麓脦脢搂掳脺潞贸拢卢脭脻脥拢碌脛脢卤录盲隆拢
-5.backup: 脝盲脣眉脣霉脫脨碌脛路脟backup禄煤脝梅down禄貌脮脽脙娄碌脛脢卤潞貌拢卢脟毛脟贸backup禄煤脝梅拢卢脫娄录卤麓毛脢漏隆拢
+1.down: 表示此台server暂时不参与负载。
+2.weight: 默认为1，weight越大，负载的权重就越大。
+3.max_fails: 允许请求失败的次数默认为1.当超过最大次数时，返回proxy_next_upstream模块定义的错误。
+4.fail_timeout: max_fails次失败后，暂停的时间。
+5.backup: 其它所有的非backup机器down或者忙的时候，请求backup机器，应急措施。
 */
 static ngx_command_t  ngx_http_upstream_commands[] = {
 /*
-脫茂路篓拢潞upstream name { ... } 
-脛卢脠脧脰碌拢潞none 
-脢鹿脫脙脳脰露脦拢潞http 
-脮芒赂枚脳脰露脦脡猫脰脙脪禄脠潞路镁脦帽脝梅拢卢驴脡脪脭陆芦脮芒赂枚脳脰露脦路脜脭脷proxy_pass潞脥fastcgi_pass脰赂脕卯脰脨脳梅脦陋脪禄赂枚碌楼露脌碌脛脢碌脤氓拢卢脣眉脙脟驴脡脪脭驴脡脪脭脢脟录脿脤媒虏禄脥卢露脣驴脷碌脛路镁脦帽脝梅拢卢
-虏垄脟脪脪虏驴脡脪脭脢脟脥卢脢卤录脿脤媒TCP潞脥Unix socket碌脛路镁脦帽脝梅隆拢
-路镁脦帽脝梅驴脡脪脭脰赂露篓虏禄脥卢碌脛脠篓脰脴拢卢脛卢脠脧脦陋1隆拢
-脢戮脌媒脜盲脰脙
+语法：upstream name { ... } 
+默认值：none 
+使用字段：http 
+这个字段设置一群服务器，可以将这个字段放在proxy_pass和fastcgi_pass指令中作为一个单独的实体，它们可以可以是监听不同端口的服务器，
+并且也可以是同时监听TCP和Unix socket的服务器。
+服务器可以指定不同的权重，默认为1。
+示例配置
 
 upstream backend {
   server backend1.example.com weight=5;
@@ -382,20 +382,20 @@ upstream backend {
   server unix:/tmp/backend3;
 
   server backup1.example.com:8080 backup; 
-}脟毛脟贸陆芦掳麓脮脮脗脰脩炉碌脛路陆脢陆路脰路垄碌陆潞贸露脣路镁脦帽脝梅拢卢碌芦脥卢脢卤脪虏禄谩驴录脗脟脠篓脰脴隆拢
-脭脷脡脧脙忙碌脛脌媒脳脫脰脨脠莽鹿没脙驴麓脦路垄脡煤7赂枚脟毛脟贸拢卢5赂枚脟毛脟贸陆芦卤禄路垄脣脥碌陆backend1.example.com拢卢脝盲脣没脕陆脤篓陆芦路脰卤冒碌脙碌陆脪禄赂枚脟毛脟贸拢卢脠莽鹿没脫脨脪禄脤篓路镁脦帽脝梅虏禄驴脡脫脙拢卢脛脟脙麓
-脟毛脟贸陆芦卤禄脳陋路垄碌陆脧脗脪禄脤篓路镁脦帽脝梅拢卢脰卤碌陆脣霉脫脨碌脛路镁脦帽脝梅录矛虏茅露录脥篓鹿媒隆拢脠莽鹿没脣霉脫脨碌脛路镁脦帽脝梅露录脦脼路篓脥篓鹿媒录矛虏茅拢卢脛脟脙麓陆芦路碌禄脴赂酶驴脥禄搂露脣脳卯潞贸脪禄脤篓鹿陇脳梅碌脛路镁脦帽脝梅虏煤脡煤碌脛陆谩鹿没隆拢
+}请求将按照轮询的方式分发到后端服务器，但同时也会考虑权重。
+在上面的例子中如果每次发生7个请求，5个请求将被发送到backend1.example.com，其他两台将分别得到一个请求，如果有一台服务器不可用，那么
+请求将被转发到下一台服务器，直到所有的服务器检查都通过。如果所有的服务器都无法通过检查，那么将返回给客户端最后一台工作的服务器产生的结果。
 
 max_fails=number
 
-  脡猫脰脙脭脷fail_timeout虏脦脢媒脡猫脰脙碌脛脢卤录盲脛脷脳卯麓贸脢搂掳脺麓脦脢媒拢卢脠莽鹿没脭脷脮芒赂枚脢卤录盲脛脷拢卢脣霉脫脨脮毛露脭赂脙路镁脦帽脝梅碌脛脟毛脟贸
-  露录脢搂掳脺脕脣拢卢脛脟脙麓脠脧脦陋赂脙路镁脦帽脝梅禄谩卤禄脠脧脦陋脢脟脥拢禄煤脕脣拢卢脥拢禄煤脢卤录盲脢脟fail_timeout脡猫脰脙碌脛脢卤录盲隆拢脛卢脠脧脟茅驴枚脧脗拢卢
-  虏禄鲁脡鹿娄脕卢陆脫脢媒卤禄脡猫脰脙脦陋1隆拢卤禄脡猫脰脙脦陋脕茫脭貌卤铆脢戮虏禄陆酶脨脨脕麓陆脫脢媒脥鲁录脝隆拢脛脟脨漏脕卢陆脫卤禄脠脧脦陋脢脟虏禄鲁脡鹿娄碌脛驴脡脪脭脥篓鹿媒
-  proxy_next_upstream, fastcgi_next_upstream拢卢潞脥memcached_next_upstream脰赂脕卯脜盲脰脙隆拢http_404
-  脳麓脤卢虏禄禄谩卤禄脠脧脦陋脢脟虏禄鲁脡鹿娄碌脛鲁垄脢脭隆拢
+  设置在fail_timeout参数设置的时间内最大失败次数，如果在这个时间内，所有针对该服务器的请求
+  都失败了，那么认为该服务器会被认为是停机了，停机时间是fail_timeout设置的时间。默认情况下，
+  不成功连接数被设置为1。被设置为零则表示不进行链接数统计。那些连接被认为是不成功的可以通过
+  proxy_next_upstream, fastcgi_next_upstream，和memcached_next_upstream指令配置。http_404
+  状态不会被认为是不成功的尝试。
 
 fail_time=time
-  脡猫脰脙 露脿鲁陇脢卤录盲脛脷脢搂掳脺麓脦脢媒麓茂碌陆脳卯麓贸脢搂掳脺麓脦脢媒禄谩卤禄脠脧脦陋路镁脦帽脝梅脥拢禄煤脕脣路镁脦帽脝梅禄谩卤禄脠脧脦陋脥拢禄煤碌脛脢卤录盲鲁陇露脠 脛卢脠脧脟茅驴枚脧脗拢卢鲁卢脢卤脢卤录盲卤禄脡猫脰脙脦陋10S
+  设置 多长时间内失败次数达到最大失败次数会被认为服务器停机了服务器会被认为停机的时间长度 默认情况下，超时时间被设置为10S
 */
     { ngx_string("upstream"),
       NGX_HTTP_MAIN_CONF|NGX_CONF_BLOCK|NGX_CONF_TAKE1,
@@ -405,15 +405,15 @@ fail_time=time
       NULL },
 
     /*
-    脫茂路篓拢潞server name [parameters];
-    脜盲脰脙驴茅拢潞upstream
-    server脜盲脰脙脧卯脰赂露篓脕脣脪禄脤篓脡脧脫脦路镁脦帽脝梅碌脛脙没脳脰拢卢脮芒赂枚脙没脳脰驴脡脪脭脢脟脫貌脙没隆垄IP碌脴脰路露脣驴脷隆垄UNIX戮盲卤煤碌脠拢卢脭脷脝盲潞贸禄鹿驴脡脪脭赂煤脧脗脕脨虏脦脢媒隆拢
-    weight=number拢潞脡猫脰脙脧貌脮芒脤篓脡脧脫脦路镁脦帽脝梅脳陋路垄碌脛脠篓脰脴拢卢脛卢脠脧脦陋1隆拢 weigth虏脦脢媒卤铆脢戮脠篓脰碌拢卢脠篓脰碌脭陆赂脽卤禄路脰脜盲碌陆碌脛录赂脗脢脭陆麓贸 
-    max_fails=number拢潞赂脙脩隆脧卯脫毛fail_timeout脜盲潞脧脢鹿脫脙拢卢脰赂脭脷fail_timeout脢卤录盲露脦脛脷拢卢脠莽鹿没脧貌碌卤脟掳碌脛脡脧脫脦路镁脦帽脝梅脳陋路垄脢搂掳脺麓脦脢媒鲁卢鹿媒number拢卢脭貌脠脧脦陋脭脷碌卤脟掳碌脛fail_timeout脢卤录盲露脦脛脷脮芒脤篓脡脧脫脦路镁脦帽脝梅虏禄驴脡脫脙隆拢max_fails脛卢脠脧脦陋1拢卢脠莽鹿没脡猫脰脙脦陋0拢卢脭貌卤铆脢戮虏禄录矛虏茅脢搂掳脺麓脦脢媒隆拢
-    fail_timeout=time拢潞fail_timeout卤铆脢戮赂脙脢卤录盲露脦脛脷脳陋路垄脢搂掳脺露脿脡脵麓脦潞贸戮脥脠脧脦陋脡脧脫脦路镁脦帽脝梅脭脻脢卤虏禄驴脡脫脙拢卢脫脙脫脷脫脜禄炉路麓脧貌麓煤脌铆鹿娄脛脺隆拢脣眉脫毛脧貌脡脧脫脦路镁脦帽脝梅陆篓脕垄脕卢陆脫碌脛鲁卢脢卤脢卤录盲隆垄露脕脠隆脡脧脫脦路镁脦帽脝梅碌脛脧矛脫娄鲁卢脢卤脢卤录盲碌脠脥锚脠芦脦脼鹿脴隆拢fail_timeout脛卢脠脧脦陋10脙毛隆拢
-    down拢潞卤铆脢戮脣霉脭脷碌脛脡脧脫脦路镁脦帽脝梅脫脌戮脙脧脗脧脽拢卢脰禄脭脷脢鹿脫脙ip_hash脜盲脰脙脧卯脢卤虏脜脫脨脫脙隆拢
-    backup拢潞脭脷脢鹿脫脙ip_hash脜盲脰脙脧卯脢卤脣眉脢脟脦脼脨搂碌脛隆拢脣眉卤铆脢戮脣霉脭脷碌脛脡脧脫脦路镁脦帽脝梅脰禄脢脟卤赂路脻路镁脦帽脝梅拢卢脰禄脫脨脭脷脣霉脫脨碌脛路脟卤赂路脻脡脧脫脦路镁脦帽脝梅露录脢搂脨搂潞贸拢卢虏脜禄谩脧貌脣霉脭脷碌脛脡脧脫脦路镁脦帽脝梅脳陋路垄脟毛脟贸隆拢
-    脌媒脠莽拢潞
+    语法：server name [parameters];
+    配置块：upstream
+    server配置项指定了一台上游服务器的名字，这个名字可以是域名、IP地址端口、UNIX句柄等，在其后还可以跟下列参数。
+    weight=number：设置向这台上游服务器转发的权重，默认为1。 weigth参数表示权值，权值越高被分配到的几率越大 
+    max_fails=number：该选项与fail_timeout配合使用，指在fail_timeout时间段内，如果向当前的上游服务器转发失败次数超过number，则认为在当前的fail_timeout时间段内这台上游服务器不可用。max_fails默认为1，如果设置为0，则表示不检查失败次数。
+    fail_timeout=time：fail_timeout表示该时间段内转发失败多少次后就认为上游服务器暂时不可用，用于优化反向代理功能。它与向上游服务器建立连接的超时时间、读取上游服务器的响应超时时间等完全无关。fail_timeout默认为10秒。
+    down：表示所在的上游服务器永久下线，只在使用ip_hash配置项时才有用。
+    backup：在使用ip_hash配置项时它是无效的。它表示所在的上游服务器只是备份服务器，只有在所有的非备份上游服务器都失效后，才会向所在的上游服务器转发请求。
+    例如：
     upstream  backend  {
       server   backend1.example.com    weight=5;
       server   127.0.0.1:8080          max_fails=3  fail_timeout=30s;
@@ -421,24 +421,24 @@ fail_time=time
     }
 
     
-    脫茂路篓拢潞server name [parameters] 
-    脛卢脠脧脰碌拢潞none 
-    脢鹿脫脙脳脰露脦拢潞upstream 
-    脰赂露篓潞贸露脣路镁脦帽脝梅碌脛脙没鲁脝潞脥脪禄脨漏虏脦脢媒拢卢驴脡脪脭脢鹿脫脙脫貌脙没拢卢IP拢卢露脣驴脷拢卢禄貌脮脽unix socket隆拢脠莽鹿没脰赂露篓脦陋脫貌脙没拢卢脭貌脢脳脧脠陆芦脝盲陆芒脦枚脦陋IP隆拢
-    隆陇weight = NUMBER - 脡猫脰脙路镁脦帽脝梅脠篓脰脴拢卢脛卢脠脧脦陋1隆拢
-    隆陇max_fails = NUMBER - 脭脷脪禄露篓脢卤录盲脛脷拢篓脮芒赂枚脢卤录盲脭脷fail_timeout虏脦脢媒脰脨脡猫脰脙拢漏录矛虏茅脮芒赂枚路镁脦帽脝梅脢脟路帽驴脡脫脙脢卤虏煤脡煤碌脛脳卯露脿脢搂掳脺脟毛脟贸脢媒拢卢脛卢脠脧脦陋1拢卢陆芦脝盲脡猫脰脙脦陋0驴脡脪脭鹿脴卤脮录矛虏茅拢卢脮芒脨漏麓铆脦贸脭脷proxy_next_upstream禄貌fastcgi_next_upstream拢篓404麓铆脦贸虏禄禄谩脢鹿max_fails脭枚录脫拢漏脰脨露篓脪氓隆拢
-    隆陇fail_timeout = TIME - 脭脷脮芒赂枚脢卤录盲脛脷虏煤脡煤脕脣max_fails脣霉脡猫脰脙麓贸脨隆碌脛脢搂掳脺鲁垄脢脭脕卢陆脫脟毛脟贸潞贸脮芒赂枚路镁脦帽脝梅驴脡脛脺虏禄驴脡脫脙拢卢脥卢脩霉脣眉脰赂露篓脕脣路镁脦帽脝梅虏禄驴脡脫脙碌脛脢卤录盲拢篓脭脷脧脗脪禄麓脦鲁垄脢脭脕卢陆脫脟毛脟贸路垄脝冒脰庐脟掳拢漏拢卢脛卢脠脧脦陋10脙毛拢卢fail_timeout脫毛脟掳露脣脧矛脫娄脢卤录盲脙禄脫脨脰卤陆脫鹿脴脧碌拢卢虏禄鹿媒驴脡脪脭脢鹿脫脙proxy_connect_timeout潞脥proxy_read_timeout脌麓驴脴脰脝隆拢
-    隆陇down - 卤锚录脟路镁脦帽脝梅麓娄脫脷脌毛脧脽脳麓脤卢拢卢脥篓鲁拢潞脥ip_hash脪禄脝冒脢鹿脫脙隆拢
-    隆陇backup - (0.6.7禄貌赂眉赂脽)脠莽鹿没脣霉脫脨碌脛路脟卤赂路脻路镁脦帽脝梅露录氓麓禄煤禄貌路卤脙娄拢卢脭貌脢鹿脫脙卤戮路镁脦帽脝梅拢篓脦脼路篓潞脥ip_hash脰赂脕卯麓卯脜盲脢鹿脫脙拢漏隆拢
-    脢戮脌媒脜盲脰脙
+    语法：server name [parameters] 
+    默认值：none 
+    使用字段：upstream 
+    指定后端服务器的名称和一些参数，可以使用域名，IP，端口，或者unix socket。如果指定为域名，则首先将其解析为IP。
+    ·weight = NUMBER - 设置服务器权重，默认为1。
+    ·max_fails = NUMBER - 在一定时间内（这个时间在fail_timeout参数中设置）检查这个服务器是否可用时产生的最多失败请求数，默认为1，将其设置为0可以关闭检查，这些错误在proxy_next_upstream或fastcgi_next_upstream（404错误不会使max_fails增加）中定义。
+    ·fail_timeout = TIME - 在这个时间内产生了max_fails所设置大小的失败尝试连接请求后这个服务器可能不可用，同样它指定了服务器不可用的时间（在下一次尝试连接请求发起之前），默认为10秒，fail_timeout与前端响应时间没有直接关系，不过可以使用proxy_connect_timeout和proxy_read_timeout来控制。
+    ·down - 标记服务器处于离线状态，通常和ip_hash一起使用。
+    ·backup - (0.6.7或更高)如果所有的非备份服务器都宕机或繁忙，则使用本服务器（无法和ip_hash指令搭配使用）。
+    示例配置
     
     upstream  backend  {
       server   backend1.example.com    weight=5;
       server   127.0.0.1:8080          max_fails=3  fail_timeout=30s;
       server   unix:/tmp/backend3;
-    }脳垄脪芒拢潞脠莽鹿没脛茫脰禄脢鹿脫脙脪禄脤篓脡脧脫脦路镁脦帽脝梅拢卢nginx陆芦脡猫脰脙脪禄赂枚脛脷脰脙卤盲脕驴脦陋1拢卢录麓max_fails潞脥fail_timeout虏脦脢媒虏禄禄谩卤禄麓娄脌铆隆拢
-    陆谩鹿没拢潞脠莽鹿没nginx虏禄脛脺脕卢陆脫碌陆脡脧脫脦拢卢脟毛脟贸陆芦露陋脢搂隆拢
-    陆芒戮枚拢潞脢鹿脫脙露脿脤篓脡脧脫脦路镁脦帽脝梅隆拢
+    }注意：如果你只使用一台上游服务器，nginx将设置一个内置变量为1，即max_fails和fail_timeout参数不会被处理。
+    结果：如果nginx不能连接到上游，请求将丢失。
+    解决：使用多台上游服务器。
     */
     { ngx_string("server"),
       NGX_HTTP_UPS_CONF|NGX_CONF_1MORE,
@@ -466,37 +466,37 @@ static ngx_http_module_t  ngx_http_upstream_module_ctx = {
 };
 
 /*
-赂潞脭脴戮霉潞芒脧脿鹿脴脜盲脰脙:
+负载均衡相关配置:
 upstream
 server
-ip_hash:赂霉戮脻驴脥禄搂露脣碌脛IP脌麓脳枚hash,虏禄鹿媒脠莽鹿没squid -- nginx -- server(s)脭貌拢卢ip脫脌脭露脢脟squid路镁脦帽脝梅ip,脪貌麓脣虏禄鹿脺脫脙,脨猫脪陋ngx_http_realip_module禄貌脮脽碌脷脠媒路陆脛拢驴茅
-keepalive:脜盲脰脙碌陆潞贸露脣碌脛脳卯麓贸脕卢陆脫脢媒拢卢卤拢鲁脰鲁陇脕卢陆脫拢卢虏禄卤脴脦陋脙驴脪禄赂枚驴脥禄搂露脣露录脰脴脨脗陆篓脕垄nginx碌陆潞贸露脣PHP碌脠路镁脦帽脝梅碌脛脕卢陆脫拢卢脨猫脪陋卤拢鲁脰潞脥潞贸露脣
-    鲁陇脕卢陆脫拢卢脌媒脠莽fastcgi:fastcgi_keep_conn on;       proxy:  proxy_http_version 1.1;  proxy_set_header Connection "";
-least_conn:赂霉戮脻脝盲脠篓脰脴脰碌拢卢陆芦脟毛脟贸路垄脣脥碌陆禄卯脭戮脕卢陆脫脢媒脳卯脡脵碌脛脛脟脤篓路镁脦帽脝梅
-hash:驴脡脪脭掳麓脮脮uri  ip 碌脠虏脦脢媒陆酶脨脨脳枚hash
+ip_hash:根据客户端的IP来做hash,不过如果squid -- nginx -- server(s)则，ip永远是squid服务器ip,因此不管用,需要ngx_http_realip_module或者第三方模块
+keepalive:配置到后端的最大连接数，保持长连接，不必为每一个客户端都重新建立nginx到后端PHP等服务器的连接，需要保持和后端
+    长连接，例如fastcgi:fastcgi_keep_conn on;       proxy:  proxy_http_version 1.1;  proxy_set_header Connection "";
+least_conn:根据其权重值，将请求发送到活跃连接数最少的那台服务器
+hash:可以按照uri  ip 等参数进行做hash
 
-虏脦驴录http://tengine.taobao.org/nginx_docs/cn/docs/http/ngx_http_upstream_module.html#ip_hash
+参考http://tengine.taobao.org/nginx_docs/cn/docs/http/ngx_http_upstream_module.html#ip_hash
 */
 
 
 /*
-Nginx虏禄陆枚陆枚驴脡脪脭脫脙脳枚Web路镁脦帽脝梅隆拢upstream禄煤脰脝脝盲脢碌脢脟脫脡ngx_http_upstream_module脛拢驴茅脢碌脧脰碌脛拢卢脣眉脢脟脪禄赂枚HTTP脛拢驴茅拢卢脢鹿脫脙upstream禄煤脰脝脢卤驴脥
-禄搂露脣碌脛脟毛脟贸卤脴脨毛禄霉脫脷HTTP隆拢
+Nginx不仅仅可以用做Web服务器。upstream机制其实是由ngx_http_upstream_module模块实现的，它是一个HTTP模块，使用upstream机制时客
+户端的请求必须基于HTTP。
 
-录脠脠禄upstream脢脟脫脙脫脷路脙脦脢隆掳脡脧脫脦隆卤路镁脦帽脝梅碌脛拢卢脛脟脙麓拢卢Nginx脨猫脪陋路脙脦脢脢虏脙麓脌脿脨脥碌脛隆掳脡脧脫脦隆卤路镁脦帽脝梅脛脴拢驴脢脟Apache隆垄Tomcat脮芒脩霉碌脛Web路镁脦帽脝梅拢卢禄鹿
-脢脟memcached隆垄cassandra脮芒脩霉碌脛Key-Value麓忙麓垄脧碌脥鲁拢卢脫脰禄貌脢脟mongoDB隆垄MySQL脮芒脩霉碌脛脢媒戮脻驴芒拢驴脮芒戮脥脡忙录掳upstream禄煤脰脝碌脛路露脦搂脕脣隆拢禄霉脫脷脢脗录镁脟媒露炉
-录脺鹿鹿碌脛upstream禄煤脰脝脣霉脪陋路脙脦脢碌脛戮脥脢脟脣霉脫脨脰搂鲁脰TCP碌脛脡脧脫脦路镁脦帽脝梅隆拢脪貌麓脣拢卢录脠脫脨ngx_http_proxy_module脛拢驴茅禄霉脫脷upstream禄煤脰脝脢碌脧脰脕脣HTTP碌脛路麓脧貌
-麓煤脌铆鹿娄脛脺拢卢脪虏脫脨脌脿脣脝ngx_http_memcached_module碌脛脛拢驴茅禄霉脫脷upstream禄煤脰脝脢鹿碌脙脟毛脟贸驴脡脪脭路脙脦脢memcached路镁脦帽脝梅隆拢
+既然upstream是用于访问“上游”服务器的，那么，Nginx需要访问什么类型的“上游”服务器呢？是Apache、Tomcat这样的Web服务器，还
+是memcached、cassandra这样的Key-Value存储系统，又或是mongoDB、MySQL这样的数据库？这就涉及upstream机制的范围了。基于事件驱动
+架构的upstream机制所要访问的就是所有支持TCP的上游服务器。因此，既有ngx_http_proxy_module模块基于upstream机制实现了HTTP的反向
+代理功能，也有类似ngx_http_memcached_module的模块基于upstream机制使得请求可以访问memcached服务器。
 
-碌卤nginx陆脫脢脮碌陆脪禄赂枚脕卢陆脫潞贸拢卢露脕脠隆脥锚驴脥禄搂露脣路垄脣脥鲁枚脌麓碌脛Header拢卢脠禄潞贸戮脥禄谩陆酶脨脨赂梅赂枚麓娄脌铆鹿媒鲁脤碌脛碌梅脫脙隆拢脰庐潞贸戮脥脢脟upstream路垄禄脫脳梅脫脙碌脛脢卤潞貌脕脣拢卢
-upstream脭脷驴脥禄搂露脣赂煤潞贸露脣卤脠脠莽FCGI/PHP脰庐录盲拢卢陆脫脢脮驴脥禄搂露脣碌脛HTTP body拢卢路垄脣脥赂酶FCGI拢卢脠禄潞贸陆脫脢脮FCGI碌脛陆谩鹿没拢卢路垄脣脥赂酶驴脥禄搂露脣隆拢脳梅脦陋脪禄赂枚脟脜脕潞碌脛脳梅脫脙隆拢
-脥卢脢卤拢卢upstream脦陋脕脣鲁盲路脰脧脭脢戮脝盲脕茅禄卯脨脭拢卢脰脕脫脷潞贸露脣戮脽脤氓脢脟脢虏脙麓脨颅脪茅拢卢脢虏脙麓脧碌脥鲁脣没露录虏禄care拢卢脦脪脰禄脢碌脧脰脰梅脤氓碌脛驴貌录脺拢卢戮脽脤氓碌陆FCGI脨颅脪茅碌脛路垄脣脥拢卢陆脫脢脮拢卢
-陆芒脦枚拢卢脮芒脨漏露录陆禄赂酶潞贸脙忙碌脛虏氓录镁脌麓麓娄脌铆拢卢卤脠脠莽脫脨fastcgi,memcached,proxy碌脠虏氓录镁
+当nginx接收到一个连接后，读取完客户端发送出来的Header，然后就会进行各个处理过程的调用。之后就是upstream发挥作用的时候了，
+upstream在客户端跟后端比如FCGI/PHP之间，接收客户端的HTTP body，发送给FCGI，然后接收FCGI的结果，发送给客户端。作为一个桥梁的作用。
+同时，upstream为了充分显示其灵活性，至于后端具体是什么协议，什么系统他都不care，我只实现主体的框架，具体到FCGI协议的发送，接收，
+解析，这些都交给后面的插件来处理，比如有fastcgi,memcached,proxy等插件
 
 http://chenzhenianqing.cn/articles/category/%e5%90%84%e7%a7%8dserver/nginx
-upstream潞脥FastCGI memcached  uwsgi  scgi proxy碌脛鹿脴脧碌虏脦驴录:http://chenzhenianqing.cn/articles/category/%e5%90%84%e7%a7%8dserver/nginx
+upstream和FastCGI memcached  uwsgi  scgi proxy的关系参考:http://chenzhenianqing.cn/articles/category/%e5%90%84%e7%a7%8dserver/nginx
 */
-ngx_module_t  ngx_http_upstream_module = { //赂脙脛拢驴茅脢脟路脙脦脢脡脧脫脦路镁脦帽脝梅脧脿鹿脴脛拢驴茅碌脛禄霉麓隆(脌媒脠莽 FastCGI memcached  uwsgi  scgi proxy露录禄谩脫脙碌陆upstream脛拢驴茅  ngx_http_proxy_module  ngx_http_memcached_module)
+ngx_module_t  ngx_http_upstream_module = { //该模块是访问上游服务器相关模块的基础(例如 FastCGI memcached  uwsgi  scgi proxy都会用到upstream模块  ngx_http_proxy_module  ngx_http_memcached_module)
     NGX_MODULE_V1,
     &ngx_http_upstream_module_ctx,            /* module context */
     ngx_http_upstream_commands,               /* module directives */
@@ -516,11 +516,11 @@ static ngx_http_variable_t  ngx_http_upstream_vars[] = {
 
     { ngx_string("upstream_addr"), NULL,
       ngx_http_upstream_addr_variable, 0,
-      NGX_HTTP_VAR_NOCACHEABLE, 0 }, //脟掳露脣路镁脦帽脝梅麓娄脌铆脟毛脟贸碌脛路镁脦帽脝梅碌脴脰路
+      NGX_HTTP_VAR_NOCACHEABLE, 0 }, //前端服务器处理请求的服务器地址
 
     { ngx_string("upstream_status"), NULL,
       ngx_http_upstream_status_variable, 0,
-      NGX_HTTP_VAR_NOCACHEABLE, 0 }, //脟掳露脣路镁脦帽脝梅碌脛脧矛脫娄脳麓脤卢隆拢
+      NGX_HTTP_VAR_NOCACHEABLE, 0 }, //前端服务器的响应状态。
 
     { ngx_string("upstream_connect_time"), NULL,
       ngx_http_upstream_response_time_variable, 2,
@@ -532,7 +532,7 @@ static ngx_http_variable_t  ngx_http_upstream_vars[] = {
 
     { ngx_string("upstream_response_time"), NULL,
       ngx_http_upstream_response_time_variable, 0,
-      NGX_HTTP_VAR_NOCACHEABLE, 0 },//脟掳露脣路镁脦帽脝梅碌脛脫娄麓冒脢卤录盲拢卢戮芦脠路碌陆潞脕脙毛拢卢虏禄脥卢碌脛脫娄麓冒脪脭露潞潞脜潞脥脙掳潞脜路脰驴陋隆拢
+      NGX_HTTP_VAR_NOCACHEABLE, 0 },//前端服务器的应答时间，精确到毫秒，不同的应答以逗号和冒号分开。
 
     { ngx_string("upstream_response_length"), NULL,
       ngx_http_upstream_response_length_variable, 0,
@@ -591,10 +591,10 @@ ngx_conf_bitmask_t  ngx_http_upstream_ignore_headers_masks[] = {
 };
 
 
-//ngx_http_upstream_create麓麓陆篓ngx_http_upstream_t拢卢脳脢脭麓禄脴脢脮脫脙ngx_http_upstream_finalize_request
-//upstream脳脢脭麓禄脴脢脮脭脷ngx_http_upstream_finalize_request   ngx_http_XXX_handler(ngx_http_proxy_handler)脰脨脰麓脨脨
+//ngx_http_upstream_create创建ngx_http_upstream_t，资源回收用ngx_http_upstream_finalize_request
+//upstream资源回收在ngx_http_upstream_finalize_request   ngx_http_XXX_handler(ngx_http_proxy_handler)中执行
 ngx_int_t
-ngx_http_upstream_create(ngx_http_request_t *r)//麓麓陆篓脪禄赂枚ngx_http_upstream_t陆谩鹿鹿拢卢路脜碌陆r->upstream脌茂脙忙脠楼隆拢
+ngx_http_upstream_create(ngx_http_request_t *r)//创建一个ngx_http_upstream_t结构，放到r->upstream里面去。
 {
     ngx_http_upstream_t  *u;
 
@@ -626,22 +626,22 @@ ngx_http_upstream_create(ngx_http_request_t *r)//麓麓陆篓脪禄赂枚ngx_htt
 }
 
 /*
-    1)碌梅脫脙ngx_http_up stream_init路陆路篓脝么露炉upstream隆拢
-    2) upstream脛拢驴茅禄谩脠楼录矛虏茅脦脛录镁禄潞麓忙拢卢脠莽鹿没禄潞麓忙脰脨脪脩戮颅脫脨潞脧脢脢碌脛脧矛脫娄掳眉拢卢脭貌禄谩脰卤陆脫路碌禄脴禄潞麓忙拢篓碌卤脠禄卤脴脨毛脢脟脭脷脢鹿脫脙路麓脧貌麓煤脌铆脦脛录镁禄潞麓忙碌脛脟掳脤谩脧脗拢漏隆拢
-    脦陋脕脣脠脙露脕脮脽路陆卤茫碌脴脌铆陆芒upstream禄煤脰脝拢卢卤戮脮脗陆芦虏禄脭脵脤谩录掳脦脛录镁禄潞麓忙隆拢
-    3)禄脴碌梅mytest脛拢驴茅脪脩戮颅脢碌脧脰碌脛create_request禄脴碌梅路陆路篓隆拢
-    4) mytest脛拢驴茅脥篓鹿媒脡猫脰脙r->upstream->request_bufs脪脩戮颅戮枚露篓潞脙路垄脣脥脢虏脙麓脩霉碌脛脟毛脟贸碌陆脡脧脫脦路镁脦帽脝梅隆拢
-    5) upstream脛拢驴茅陆芦禄谩录矛虏茅resolved鲁脡脭卤拢卢脠莽鹿没脫脨resolved鲁脡脭卤碌脛禄掳拢卢戮脥赂霉戮脻脣眉脡猫脰脙潞脙脡脧脫脦路镁脦帽脝梅碌脛碌脴脰路r->upstream->peer鲁脡脭卤隆拢
-    6)脫脙脦脼脳猫脠没碌脛TCP脤脳陆脫脳脰陆篓脕垄脕卢陆脫隆拢
-    7)脦脼脗脹脕卢陆脫脢脟路帽陆篓脕垄鲁脡鹿娄拢卢赂潞脭冒陆篓脕垄脕卢陆脫碌脛connect路陆路篓露录禄谩脕垄驴脤路碌禄脴隆拢
+    1)调用ngx_http_up stream_init方法启动upstream。
+    2) upstream模块会去检查文件缓存，如果缓存中已经有合适的响应包，则会直接返回缓存（当然必须是在使用反向代理文件缓存的前提下）。
+    为了让读者方便地理解upstream机制，本章将不再提及文件缓存。
+    3)回调mytest模块已经实现的create_request回调方法。
+    4) mytest模块通过设置r->upstream->request_bufs已经决定好发送什么样的请求到上游服务器。
+    5) upstream模块将会检查resolved成员，如果有resolved成员的话，就根据它设置好上游服务器的地址r->upstream->peer成员。
+    6)用无阻塞的TCP套接字建立连接。
+    7)无论连接是否建立成功，负责建立连接的connect方法都会立刻返回。
 */
-//ngx_http_upstream_init路陆路篓陆芦禄谩赂霉戮脻ngx_http_upstream_conf_t脰脨碌脛鲁脡脭卤鲁玫脢录禄炉upstream拢卢脥卢脢卤禄谩驴陋脢录脕卢陆脫脡脧脫脦路镁脦帽脝梅拢卢脪脭麓脣脮鹿驴陋脮没赂枚upstream麓娄脌铆脕梅鲁脤
+//ngx_http_upstream_init方法将会根据ngx_http_upstream_conf_t中的成员初始化upstream，同时会开始连接上游服务器，以此展开整个upstream处理流程
 void ngx_http_upstream_init(ngx_http_request_t *r) 
-//脭脷露脕脠隆脥锚盲炉脌脌脝梅路垄脣脥脌麓碌脛脟毛脟贸脥路虏驴脳脰露脦潞贸拢卢禄谩脥篓鹿媒proxy fastcgi碌脠脛拢驴茅露脕脠隆掳眉脤氓拢卢露脕脠隆脥锚潞贸脰麓脨脨赂脙潞炉脢媒拢卢脌媒脠莽ngx_http_read_client_request_body(r, ngx_http_upstream_init);
+//在读取完浏览器发送来的请求头部字段后，会通过proxy fastcgi等模块读取包体，读取完后执行该函数，例如ngx_http_read_client_request_body(r, ngx_http_upstream_init);
 {
     ngx_connection_t     *c;
 
-    c = r->connection;//碌脙碌陆驴脥禄搂露脣脕卢陆脫陆谩鹿鹿隆拢
+    c = r->connection;//得到客户端连接结构。
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
                    "http init upstream, client timer: %d", c->read->timer_set);
@@ -654,27 +654,27 @@ void ngx_http_upstream_init(ngx_http_request_t *r)
 #endif
 
     /*
-        脢脳脧脠录矛虏茅脟毛脟贸露脭脫娄脫脷驴脥禄搂露脣碌脛脕卢陆脫拢卢脮芒赂枚脕卢陆脫脡脧碌脛露脕脢脗录镁脠莽鹿没脭脷露篓脢卤脝梅脰脨拢卢脪虏戮脥脢脟脣碌拢卢露脕脢脗录镁碌脛timer_ set卤锚脰戮脦禄脦陋1拢卢脛脟脙麓碌梅脫脙ngx_del_timer
-    路陆路篓掳脩脮芒赂枚露脕脢脗录镁麓脫露篓脢卤脝梅脰脨脪脝鲁媒隆拢脦陋脢虏脙麓脪陋脳枚脮芒录镁脢脗脛脴拢驴脪貌脦陋脪禄碌漏脝么露炉upstream禄煤脰脝拢卢戮脥虏禄脫娄赂脙露脭驴脥禄搂露脣碌脛露脕虏脵脳梅麓酶脫脨鲁卢脢卤脢卤录盲碌脛麓娄脌铆(鲁卢脢卤禄谩鹿脴卤脮驴脥禄搂露脣脕卢陆脫)拢卢
-    脟毛脟贸碌脛脰梅脪陋麓楼路垄脢脗录镁陆芦脪脭脫毛脡脧脫脦路镁脦帽脝梅碌脛脕卢陆脫脦陋脰梅隆拢
+        首先检查请求对应于客户端的连接，这个连接上的读事件如果在定时器中，也就是说，读事件的timer_ set标志位为1，那么调用ngx_del_timer
+    方法把这个读事件从定时器中移除。为什么要做这件事呢？因为一旦启动upstream机制，就不应该对客户端的读操作带有超时时间的处理(超时会关闭客户端连接)，
+    请求的主要触发事件将以与上游服务器的连接为主。
      */
     if (c->read->timer_set) {
         ngx_del_timer(c->read, NGX_FUNC_LINE);
     }
 
-    if (ngx_event_flags & NGX_USE_CLEAR_EVENT) { //脠莽鹿没epoll脢鹿脫脙卤脽脭碌麓楼路垄
+    if (ngx_event_flags & NGX_USE_CLEAR_EVENT) { //如果epoll使用边缘触发
 
 /*
 2025/04/24 05:31:47[             ngx_http_upstream_init,   654]  [debug] 15507#15507: *1 <   ngx_http_upstream_init,   653> epoll NGX_WRITE_EVENT(et) read add
 2025/04/24 05:31:47[                ngx_epoll_add_event,  1400]  [debug] 15507#15507: *1 epoll modify read and write event: fd:11 op:3 ev:80002005
 025/04/24 05:31:47[           ngx_epoll_process_events,  1624]  [debug] 15507#15507: begin to epoll_wait, epoll timer: 60000 
 2025/04/24 05:31:47[           ngx_epoll_process_events,  1709]  [debug] 15507#15507: epoll: fd:11 epoll-out(ev:0004) d:B26A00E8
-脢碌录脢脡脧脢脟脥篓鹿媒ngx_http_upstream_init脰脨碌脛mod epoll_ctl脤铆录脫露脕脨麓脢脗录镁麓楼路垄碌脛拢卢碌卤卤戮麓脦脩颅禄路脥脣禄脴碌陆ngx_worker_process_cycle ..->ngx_epoll_process_events
-碌脛脢卤潞貌拢卢戮脥禄谩麓楼路垄epoll_out,麓脫露酶脰麓脨脨ngx_http_upstream_wr_check_broken_connection
+实际上是通过ngx_http_upstream_init中的mod epoll_ctl添加读写事件触发的，当本次循环退回到ngx_worker_process_cycle ..->ngx_epoll_process_events
+的时候，就会触发epoll_out,从而执行ngx_http_upstream_wr_check_broken_connection
 */
-        //脮芒脌茂脢碌录脢脡脧脢脟麓楼路垄脰麓脨脨ngx_http_upstream_check_broken_connection
-        if (!c->write->active) {//脪陋脭枚录脫驴脡脨麓脢脗录镁脥篓脰陋拢卢脦陋脡露?脪貌脦陋麓媒禄谩驴脡脛脺戮脥脛脺脨麓脕脣,驴脡脛脺禄谩脳陋路垄脡脧脫脦路镁脦帽脝梅碌脛脛脷脠脻赂酶盲炉脌脌脝梅碌脠驴脥禄搂露脣
-            //脢碌录脢脡脧脢脟录矛虏茅潞脥驴脥禄搂露脣碌脛脕卢陆脫脢脟路帽脪矛鲁拢脕脣
+        //这里实际上是触发执行ngx_http_upstream_check_broken_connection
+        if (!c->write->active) {//要增加可写事件通知，为啥?因为待会可能就能写了,可能会转发上游服务器的内容给浏览器等客户端
+            //实际上是检查和客户端的连接是否异常了
             char tmpbuf[256];
             
             snprintf(tmpbuf, sizeof(tmpbuf), "<%25s, %5d> epoll NGX_WRITE_EVENT(et) write add", NGX_FUNC_LINE);
@@ -691,10 +691,10 @@ void ngx_http_upstream_init(ngx_http_request_t *r)
     ngx_http_upstream_init_request(r);
 }
 
-//ngx_http_upstream_init碌梅脫脙脮芒脌茂拢卢麓脣脢卤驴脥禄搂露脣路垄脣脥碌脛脢媒戮脻露录脪脩戮颅陆脫脢脮脥锚卤脧脕脣隆拢
+//ngx_http_upstream_init调用这里，此时客户端发送的数据都已经接收完毕了。
 /*
-1. 碌梅脫脙create_request麓麓陆篓fcgi禄貌脮脽proxy碌脛脢媒戮脻陆谩鹿鹿隆拢
-2. 碌梅脫脙ngx_http_upstream_connect脕卢陆脫脧脗脫脦路镁脦帽脝梅隆拢
+1. 调用create_request创建fcgi或者proxy的数据结构。
+2. 调用ngx_http_upstream_connect连接下游服务器。
 */ 
 static void
 ngx_http_upstream_init_request(ngx_http_request_t *r)
@@ -713,7 +713,7 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
         return;
     }
 
-    u = r->upstream;//ngx_http_upstream_create脌茂脙忙脡猫脰脙碌脛  ngx_http_XXX_handler(ngx_http_proxy_handler)脰脨脰麓脨脨
+    u = r->upstream;//ngx_http_upstream_create里面设置的  ngx_http_XXX_handler(ngx_http_proxy_handler)中执行
 
 #if (NGX_HTTP_CACHE)
 
@@ -751,64 +751,64 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
     u->store = u->conf->store;
 
     /*
-    脡猫脰脙Nginx脫毛脧脗脫脦驴脥禄搂露脣脰庐录盲TCP脕卢陆脫碌脛录矛虏茅路陆路篓
-    脢碌录脢脡脧拢卢脮芒脕陆赂枚路陆路篓露录禄谩脥篓鹿媒ngx_http_upstream_check_broken_connection路陆路篓录矛虏茅Nginx脫毛脧脗脫脦碌脛脕卢陆脫脢脟路帽脮媒鲁拢拢卢脠莽鹿没鲁枚脧脰麓铆脦贸拢卢戮脥禄谩脕垄录麓脰脮脰鹿脕卢陆脫隆拢
+    设置Nginx与下游客户端之间TCP连接的检查方法
+    实际上，这两个方法都会通过ngx_http_upstream_check_broken_connection方法检查Nginx与下游的连接是否正常，如果出现错误，就会立即终止连接。
      */
 /*
 2025/04/24 05:31:47[             ngx_http_upstream_init,   654]  [debug] 15507#15507: *1 <   ngx_http_upstream_init,   653> epoll NGX_WRITE_EVENT(et) read add
 2025/04/24 05:31:47[                ngx_epoll_add_event,  1400]  [debug] 15507#15507: *1 epoll modify read and write event: fd:11 op:3 ev:80002005
 2025/04/24 05:31:47[           ngx_epoll_process_events,  1624]  [debug] 15507#15507: begin to epoll_wait, epoll timer: 60000 
 2025/04/24 05:31:47[           ngx_epoll_process_events,  1709]  [debug] 15507#15507: epoll: fd:11 epoll-out(ev:0004) d:B26A00E8
-脢碌录脢脡脧脢脟脥篓鹿媒ngx_http_upstream_init脰脨碌脛mod epoll_ctl脤铆录脫露脕脨麓脢脗录镁麓楼路垄碌脛拢卢碌卤卤戮麓脦脩颅禄路脥脣禄脴碌陆ngx_worker_process_cycle ..->ngx_epoll_process_events
-碌脛脢卤潞貌拢卢戮脥禄谩麓楼路垄epoll_out,麓脫露酶脰麓脨脨ngx_http_upstream_wr_check_broken_connection
+实际上是通过ngx_http_upstream_init中的mod epoll_ctl添加读写事件触发的，当本次循环退回到ngx_worker_process_cycle ..->ngx_epoll_process_events
+的时候，就会触发epoll_out,从而执行ngx_http_upstream_wr_check_broken_connection
 */
     if (!u->store && !r->post_action && !u->conf->ignore_client_abort) {
-        //脳垄脪芒脮芒脢卤潞貌碌脛r禄鹿脢脟驴脥禄搂露脣碌脛脕卢陆脫拢卢脫毛脡脧脫脦路镁脦帽脝梅碌脛脕卢陆脫r禄鹿脙禄脫脨陆篓脕垄
-        r->read_event_handler = ngx_http_upstream_rd_check_broken_connection; //脡猫脰脙禄脴碌梅脨猫脪陋录矛虏芒脕卢陆脫脢脟路帽脫脨脦脢脤芒隆拢
+        //注意这时候的r还是客户端的连接，与上游服务器的连接r还没有建立
+        r->read_event_handler = ngx_http_upstream_rd_check_broken_connection; //设置回调需要检测连接是否有问题。
         r->write_event_handler = ngx_http_upstream_wr_check_broken_connection;
     }
     
 
-    //脫脨陆脫脢脮碌陆驴脥禄搂露脣掳眉脤氓拢卢脭貌掳脩掳眉脤氓陆谩鹿鹿赂鲁脰碌赂酶u->request_bufs拢卢脭脷潞贸脙忙碌脛if (u->create_request(r) != NGX_OK) {禄谩脫脙碌陆
-    if (r->request_body) {//驴脥禄搂露脣路垄脣脥鹿媒脌麓碌脛POST脢媒戮脻麓忙路脜脭脷麓脣,ngx_http_read_client_request_body路脜碌脛
-        u->request_bufs = r->request_body->bufs; //录脟脗录驴脥禄搂露脣路垄脣脥碌脛脢媒戮脻拢卢脧脗脙忙脭脷create_request碌脛脢卤潞貌驴陆卤麓碌陆路垄脣脥禄潞鲁氓脕麓陆脫卤铆脌茂脙忙碌脛隆拢
+    //有接收到客户端包体，则把包体结构赋值给u->request_bufs，在后面的if (u->create_request(r) != NGX_OK) {会用到
+    if (r->request_body) {//客户端发送过来的POST数据存放在此,ngx_http_read_client_request_body放的
+        u->request_bufs = r->request_body->bufs; //记录客户端发送的数据，下面在create_request的时候拷贝到发送缓冲链接表里面的。
     }
 
     /*
-     碌梅脫脙脟毛脟贸脰脨ngx_http_upstream_t陆谩鹿鹿脤氓脌茂脫脡脛鲁赂枚HTTP脛拢驴茅脢碌脧脰碌脛create_request路陆路篓拢卢鹿鹿脭矛路垄脥霉脡脧脫脦路镁脦帽脝梅碌脛脟毛脟贸
-     拢篓脟毛脟贸脰脨碌脛脛脷脠脻脢脟脡猫脰脙碌陆request_bufs禄潞鲁氓脟酶脕麓卤铆脰脨碌脛拢漏隆拢脠莽鹿没create_request路陆路篓脙禄脫脨路碌禄脴NGX_OK拢卢脭貌upstream陆谩脢酶
+     调用请求中ngx_http_upstream_t结构体里由某个HTTP模块实现的create_request方法，构造发往上游服务器的请求
+     （请求中的内容是设置到request_bufs缓冲区链表中的）。如果create_request方法没有返回NGX_OK，则upstream结束
 
-     脠莽鹿没脢脟FCGI隆拢脧脗脙忙脳茅陆篓潞脙FCGI碌脛赂梅脰脰脥路虏驴拢卢掳眉脌篓脟毛脟贸驴陋脢录脥路拢卢脟毛脟贸虏脦脢媒脥路拢卢脟毛脟贸STDIN脥路隆拢麓忙路脜脭脷u->request_bufs脕麓陆脫卤铆脌茂脙忙隆拢
-	脠莽鹿没脢脟Proxy脛拢驴茅拢卢ngx_http_proxy_create_request脳茅录镁路麓脧貌麓煤脌铆碌脛脥路虏驴脡露碌脛,路脜碌陆u->request_bufs脌茂脙忙
-	FastCGI memcached  uwsgi  scgi proxy露录禄谩脫脙碌陆upstream脛拢驴茅
+     如果是FCGI。下面组建好FCGI的各种头部，包括请求开始头，请求参数头，请求STDIN头。存放在u->request_bufs链接表里面。
+    如果是Proxy模块，ngx_http_proxy_create_request组件反向代理的头部啥的,放到u->request_bufs里面
+    FastCGI memcached  uwsgi  scgi proxy都会用到upstream模块
      */
-    if (u->create_request(r) != NGX_OK) { //ngx_http_XXX_create_request   ngx_http_proxy_create_request碌脠
+    if (u->create_request(r) != NGX_OK) { //ngx_http_XXX_create_request   ngx_http_proxy_create_request等
         ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
     
-    /* 禄帽脠隆ngx_http_upstream_t陆谩鹿鹿脰脨脰梅露炉脕卢陆脫陆谩鹿鹿peer碌脛local卤戮碌脴碌脴脰路脨脜脧垄 */
+    /* 获取ngx_http_upstream_t结构中主动连接结构peer的local本地地址信息 */
     u->peer.local = ngx_http_upstream_get_local(r, u->conf->local);
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
     
-    /* 鲁玫脢录禄炉ngx_http_upstream_t陆谩鹿鹿脰脨鲁脡脭卤output脧貌脧脗脫脦路垄脣脥脧矛脫娄碌脛路陆脢陆 */
+    /* 初始化ngx_http_upstream_t结构中成员output向下游发送响应的方式 */
     u->output.alignment = clcf->directio_alignment; //
     u->output.pool = r->pool;
     u->output.bufs.num = 1;
     u->output.bufs.size = clcf->client_body_buffer_size;
 
     if (u->output.output_filter == NULL) {
-        //脡猫脰脙鹿媒脗脣脛拢驴茅碌脛驴陋脢录鹿媒脗脣潞炉脢媒脦陋writer隆拢脪虏戮脥脢脟output_filter隆拢脭脷ngx_output_chain卤禄碌梅脫脙脪脩陆酶脨脨脢媒戮脻碌脛鹿媒脗脣
+        //设置过滤模块的开始过滤函数为writer。也就是output_filter。在ngx_output_chain被调用已进行数据的过滤
         u->output.output_filter = ngx_chain_writer; 
-        u->output.filter_ctx = &u->writer; //虏脦驴录ngx_chain_writer拢卢脌茂脙忙禄谩陆芦脢盲鲁枚buf脪禄赂枚赂枚脕卢陆脫碌陆脮芒脌茂隆拢
+        u->output.filter_ctx = &u->writer; //参考ngx_chain_writer，里面会将输出buf一个个连接到这里。
     }
 
     u->writer.pool = r->pool;
     
-    /* 脤铆录脫脫脙脫脷卤铆脢戮脡脧脫脦脧矛脫娄碌脛脳麓脤卢拢卢脌媒脠莽拢潞麓铆脦贸卤脿脗毛隆垄掳眉脤氓鲁陇露脠碌脠 */
-    if (r->upstream_states == NULL) {//脢媒脳茅upstream_states拢卢卤拢脕么upstream碌脛脳麓脤卢脨脜脧垄隆拢
+    /* 添加用于表示上游响应的状态，例如：错误编码、包体长度等 */
+    if (r->upstream_states == NULL) {//数组upstream_states，保留upstream的状态信息。
 
         r->upstream_states = ngx_array_create(r->pool, 1,
                                             sizeof(ngx_http_upstream_state_t));
@@ -829,41 +829,41 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
         ngx_memzero(u->state, sizeof(ngx_http_upstream_state_t));
     }
 
-    cln = ngx_http_cleanup_add(r, 0);//禄路脨脦脕麓卤铆拢卢脡锚脟毛脪禄赂枚脨脗碌脛脭陋脣脴隆拢
+    cln = ngx_http_cleanup_add(r, 0);//环形链表，申请一个新的元素。
     if (cln == NULL) {
         ngx_http_finalize_request(r, NGX_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
-    cln->handler = ngx_http_upstream_cleanup; //碌卤脟毛脟贸陆谩脢酶脢卤拢卢脪禄露篓禄谩碌梅脫脙ngx_http_upstream_cleanup路陆路篓
-    cln->data = r;//脰赂脧貌脣霉脰赂碌脛脟毛脟贸陆谩鹿鹿脤氓隆拢
+    cln->handler = ngx_http_upstream_cleanup; //当请求结束时，一定会调用ngx_http_upstream_cleanup方法
+    cln->data = r;//指向所指的请求结构体。
     u->cleanup = &cln->handler;
 
     /*
     http://www.pagefault.info/?p=251
-    脠禄潞贸戮脥脢脟脮芒赂枚潞炉脢媒脳卯潞脣脨脛碌脛麓娄脌铆虏驴路脰拢卢脛脟戮脥脢脟赂霉戮脻upstream碌脛脌脿脨脥脌麓陆酶脨脨虏禄脥卢碌脛虏脵脳梅拢卢脮芒脌茂碌脛upstream戮脥脢脟脦脪脙脟脥篓鹿媒XXX_pass麓芦碌脻陆酶脌麓碌脛脰碌拢卢
-    脮芒脌茂碌脛upstream脫脨驴脡脛脺脧脗脙忙录赂脰脰脟茅驴枚隆拢 
+    然后就是这个函数最核心的处理部分，那就是根据upstream的类型来进行不同的操作，这里的upstream就是我们通过XXX_pass传递进来的值，
+    这里的upstream有可能下面几种情况。 
     Ngx_http_fastcgi_module.c (src\http\modules):    { ngx_string("fastcgi_pass"),
     Ngx_http_memcached_module.c (src\http\modules):    { ngx_string("memcached_pass"),
     Ngx_http_proxy_module.c (src\http\modules):    { ngx_string("proxy_pass"),
     Ngx_http_scgi_module.c (src\http\modules):    { ngx_string("scgi_pass"),
     Ngx_http_uwsgi_module.c (src\http\modules):    { ngx_string("uwsgi_pass"),
     Ngx_stream_proxy_module.c (src\stream):    { ngx_string("proxy_pass"),
-    1 XXX_pass脰脨虏禄掳眉潞卢卤盲脕驴隆拢
-    2 XXX_pass麓芦碌脻碌脛脰碌掳眉潞卢脕脣脪禄赂枚卤盲脕驴($驴陋脢录).脮芒脰脰脟茅驴枚脪虏戮脥脢脟脣碌upstream碌脛url脢脟露炉脤卢卤盲禄炉碌脛拢卢脪貌麓脣脨猫脪陋脙驴麓脦露录陆芒脦枚脪禄卤茅.
-    露酶碌脷露镁脰脰脟茅驴枚脫脰路脰脦陋2脰脰拢卢脪禄脰脰脢脟脭脷陆酶脠毛upstream脰庐脟掳拢卢脪虏戮脥脢脟 upstream脛拢驴茅碌脛handler脰庐脰脨脪脩戮颅卤禄resolve碌脛碌脴脰路(脟毛驴麓ngx_http_XXX_eval潞炉脢媒)拢卢
-    脪禄脰脰脢脟脙禄脫脨卤禄resolve拢卢麓脣脢卤戮脥脨猫脪陋upstream脛拢驴茅脌麓陆酶脨脨resolve隆拢陆脫脧脗脌麓碌脛麓煤脗毛戮脥脢脟麓娄脌铆脮芒虏驴路脰碌脛露芦脦梅隆拢
+    1 XXX_pass中不包含变量。
+    2 XXX_pass传递的值包含了一个变量($开始).这种情况也就是说upstream的url是动态变化的，因此需要每次都解析一遍.
+    而第二种情况又分为2种，一种是在进入upstream之前，也就是 upstream模块的handler之中已经被resolve的地址(请看ngx_http_XXX_eval函数)，
+    一种是没有被resolve，此时就需要upstream模块来进行resolve。接下来的代码就是处理这部分的东西。
     */
-    if (u->resolved == NULL) {//脡脧脫脦碌脛IP碌脴脰路脢脟路帽卤禄陆芒脦枚鹿媒拢卢ngx_http_fastcgi_handler碌梅脫脙ngx_http_fastcgi_eval禄谩陆芒脦枚隆拢 脦陋NULL脣碌脙梅脙禄脫脨陆芒脦枚鹿媒拢卢脪虏戮脥脢脟fastcgi_pas xxx脰脨碌脛xxx虏脦脢媒脙禄脫脨卤盲脕驴
-        uscf = u->conf->upstream; //upstream赂鲁脰碌脭脷ngx_http_fastcgi_pass
-    } else { //fastcgi_pass xxx碌脛xxx脰脨脫脨卤盲脕驴拢卢脣碌脙梅潞贸露脣路镁脦帽脝梅脢脟禄谩赂霉戮脻脟毛脟贸露炉脤卢卤盲禄炉碌脛拢卢虏脦驴录ngx_http_fastcgi_handler
+    if (u->resolved == NULL) {//上游的IP地址是否被解析过，ngx_http_fastcgi_handler调用ngx_http_fastcgi_eval会解析。 为NULL说明没有解析过，也就是fastcgi_pas xxx中的xxx参数没有变量
+        uscf = u->conf->upstream; //upstream赋值在ngx_http_fastcgi_pass
+    } else { //fastcgi_pass xxx的xxx中有变量，说明后端服务器是会根据请求动态变化的，参考ngx_http_fastcgi_handler
 
 #if (NGX_HTTP_SSL)
         u->ssl_name = u->resolved->host;
 #endif
-    //ngx_http_fastcgi_handler 禄谩碌梅脫脙 ngx_http_fastcgi_eval潞炉脢媒拢卢陆酶脨脨fastcgi_pass 潞贸脙忙碌脛URL碌脛录貌脦枚拢卢陆芒脦枚鲁枚unix脫貌拢卢禄貌脮脽socket.
-        // 脠莽鹿没脪脩戮颅脢脟ip碌脴脰路赂帽脢陆脕脣拢卢戮脥虏禄脨猫脪陋脭脵陆酶脨脨陆芒脦枚
-        if (u->resolved->sockaddr) {//脠莽鹿没碌脴脰路脪脩戮颅卤禄resolve鹿媒脕脣拢卢脦脪IP碌脴脰路拢卢麓脣脢卤麓麓陆篓round robin peer戮脥脨脨
+    //ngx_http_fastcgi_handler 会调用 ngx_http_fastcgi_eval函数，进行fastcgi_pass 后面的URL的简析，解析出unix域，或者socket.
+        // 如果已经是ip地址格式了，就不需要再进行解析
+        if (u->resolved->sockaddr) {//如果地址已经被resolve过了，我IP地址，此时创建round robin peer就行
 
             if (ngx_http_upstream_create_round_robin_peer(r, u->resolved)
                 != NGX_OK)
@@ -873,29 +873,29 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
                 return;
             }
 
-            ngx_http_upstream_connect(r, u);//脕卢陆脫 
+            ngx_http_upstream_connect(r, u);//连接 
 
             return;
         }
 
-        //脧脗脙忙驴陋脢录虏茅脮脪脫貌脙没拢卢脪貌脦陋fcgi_pass潞贸脙忙虏禄脢脟ip:port拢卢露酶脢脟url拢禄
-        host = &u->resolved->host;//禄帽脠隆host脨脜脧垄隆拢 
-        // 陆脫脧脗脌麓戮脥脪陋驴陋脢录虏茅脮脪脫貌脙没
+        //下面开始查找域名，因为fcgi_pass后面不是ip:port，而是url；
+        host = &u->resolved->host;//获取host信息。 
+        // 接下来就要开始查找域名
 
         umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
 
         uscfp = umcf->upstreams.elts;
 
-        for (i = 0; i < umcf->upstreams.nelts; i++) {//卤茅脌煤脣霉脫脨碌脛脡脧脫脦脛拢驴茅拢卢赂霉戮脻脝盲host陆酶脨脨虏茅脮脪拢卢脮脪碌陆host,port脧脿脥卢碌脛隆拢
+        for (i = 0; i < umcf->upstreams.nelts; i++) {//遍历所有的上游模块，根据其host进行查找，找到host,port相同的。
 
-            uscf = uscfp[i];//脮脪脪禄赂枚IP脪禄脩霉碌脛脡脧脕梅脛拢驴茅
+            uscf = uscfp[i];//找一个IP一样的上流模块
 
             if (uscf->host.len == host->len
                 && ((uscf->port == 0 && u->resolved->no_port)
                      || uscf->port == u->resolved->port)
                 && ngx_strncasecmp(uscf->host.data, host->data, host->len) == 0)
             {
-                goto found;//脮芒赂枚host脮媒潞脙脧脿碌脠
+                goto found;//这个host正好相等
             }
         }
 
@@ -907,19 +907,19 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
             return;
         }
 
-        //脙禄掳矛路篓脕脣拢卢url虏禄脭脷upstreams脢媒脳茅脌茂脙忙拢卢脪虏戮脥脢脟虏禄脢脟脦脪脙脟脜盲脰脙碌脛拢卢脛脟脙麓鲁玫脢录禄炉脫貌脙没陆芒脦枚脝梅
+        //没办法了，url不在upstreams数组里面，也就是不是我们配置的，那么初始化域名解析器
         temp.name = *host;
         
-        // 鲁玫脢录禄炉脫貌脙没陆芒脦枚脝梅
-        ctx = ngx_resolve_start(clcf->resolver, &temp);//陆酶脨脨脫貌脙没陆芒脦枚拢卢麓酶禄潞麓忙碌脛隆拢脡锚脟毛脧脿鹿脴碌脛陆谩鹿鹿拢卢路碌禄脴脡脧脧脗脦脛碌脴脰路隆拢
+        // 初始化域名解析器
+        ctx = ngx_resolve_start(clcf->resolver, &temp);//进行域名解析，带缓存的。申请相关的结构，返回上下文地址。
         if (ctx == NULL) {
             ngx_http_upstream_finalize_request(r, u,
                                                NGX_HTTP_INTERNAL_SERVER_ERROR);
             return;
         }
 
-        if (ctx == NGX_NO_RESOLVER) {//脦脼路篓陆酶脨脨脫貌脙没陆芒脦枚隆拢 
-            // 路碌禄脴NGX_NO_RESOLVER卤铆脢戮脦脼路篓陆酶脨脨脫貌脙没陆芒脦枚
+        if (ctx == NGX_NO_RESOLVER) {//无法进行域名解析。 
+            // 返回NGX_NO_RESOLVER表示无法进行域名解析
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                           "no resolver defined to resolve %V", host);
 
@@ -927,15 +927,15 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
             return;
         }
         
-        // 脡猫脰脙脨猫脪陋陆芒脦枚碌脛脫貌脙没碌脛脌脿脨脥脫毛脨脜脧垄
+        // 设置需要解析的域名的类型与信息
         ctx->name = *host;
-        ctx->handler = ngx_http_upstream_resolve_handler;//脡猫脰脙脫貌脙没陆芒脦枚脥锚鲁脡潞贸碌脛禄脴碌梅潞炉脢媒隆拢
+        ctx->handler = ngx_http_upstream_resolve_handler;//设置域名解析完成后的回调函数。
         ctx->data = r;
         ctx->timeout = clcf->resolver_timeout;
 
         u->resolved->ctx = ctx;
 
-        //驴陋脢录脫貌脙没陆芒脦枚拢卢脙禄脫脨脥锚鲁脡脪虏禄谩路碌禄脴碌脛隆拢
+        //开始域名解析，没有完成也会返回的。
         if (ngx_resolve_name(ctx) != NGX_OK) {
             u->resolved->ctx = NULL;
             ngx_http_upstream_finalize_request(r, u,
@@ -944,7 +944,7 @@ ngx_http_upstream_init_request(ngx_http_request_t *r)
         }
 
         return;
-        // 脫貌脙没禄鹿脙禄脫脨陆芒脦枚脥锚鲁脡拢卢脭貌脰卤陆脫路碌禄脴
+        // 域名还没有解析完成，则直接返回
     }
 
 found:
@@ -975,15 +975,15 @@ found:
         u->peer.tries = u->conf->next_upstream_tries;
     }
 
-    ngx_http_upstream_connect(r, u);//碌梅脫脙ngx_http_upstream_connect路陆路篓脧貌脡脧脫脦路镁脦帽脝梅路垄脝冒脕卢陆脫
+    ngx_http_upstream_connect(r, u);//调用ngx_http_upstream_connect方法向上游服务器发起连接
 }
 
 
 #if (NGX_HTTP_CACHE)
-/*ngx_http_upstream_init_request->ngx_http_upstream_cache 驴脥禄搂露脣禄帽脠隆禄潞麓忙 潞贸露脣脫娄麓冒禄脴脌麓脢媒戮脻潞贸脭脷ngx_http_upstream_send_response->ngx_http_file_cache_create
-脰脨麓麓陆篓脕脵脢卤脦脛录镁拢卢脠禄潞贸脭脷ngx_event_pipe_write_chain_to_temp_file掳脩露脕脠隆碌脛潞贸露脣脢媒戮脻脨麓脠毛脕脵脢卤脦脛录镁拢卢脳卯潞贸脭脷
-ngx_http_upstream_send_response->ngx_http_upstream_process_request->ngx_http_file_cache_update脰脨掳脩脕脵脢卤脦脛录镁脛脷脠脻rename(脧脿碌卤脫脷mv)碌陆proxy_cache_path脰赂露篓
-碌脛cache脛驴脗录脧脗脙忙
+/*ngx_http_upstream_init_request->ngx_http_upstream_cache 客户端获取缓存 后端应答回来数据后在ngx_http_upstream_send_response->ngx_http_file_cache_create
+中创建临时文件，然后在ngx_event_pipe_write_chain_to_temp_file把读取的后端数据写入临时文件，最后在
+ngx_http_upstream_send_response->ngx_http_upstream_process_request->ngx_http_file_cache_update中把临时文件内容rename(相当于mv)到proxy_cache_path指定
+的cache目录下面
 */
 static ngx_int_t
 ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
@@ -994,8 +994,8 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
     c = r->cache;
 
-    if (c == NULL) { /* 脠莽鹿没禄鹿脦麓赂酶碌卤脟掳脟毛脟贸路脰脜盲禄潞麓忙脧脿鹿脴陆谩鹿鹿脤氓( ngx_http_cache_t ) 脢卤拢卢麓麓陆篓麓脣脌脿脨脥脳脰露脦( r->cache ) 虏垄鲁玫脢录禄炉拢潞 */
-        //脌媒脠莽proxy |fastcgi _cache_methods  POST脡猫脰脙脰碌禄潞麓忙POST脟毛脟贸拢卢碌芦脢脟驴脥禄搂露脣脟毛脟贸路陆路篓脢脟GET拢卢脭貌脰卤陆脫路碌禄脴
+    if (c == NULL) { /* 如果还未给当前请求分配缓存相关结构体( ngx_http_cache_t ) 时，创建此类型字段( r->cache ) 并初始化： */
+        //例如proxy |fastcgi _cache_methods  POST设置值缓存POST请求，但是客户端请求方法是GET，则直接返回
         if (!(r->method & u->conf->cache_methods)) {
             return NGX_DECLINED;
         }
@@ -1014,13 +1014,13 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
             return NGX_ERROR;
         }
 
-        if (u->create_key(r) != NGX_OK) {////陆芒脦枚xx_cache_key adfaxx 虏脦脢媒脰碌碌陆r->cache->keys
+        if (u->create_key(r) != NGX_OK) {////解析xx_cache_key adfaxx 参数值到r->cache->keys
             return NGX_ERROR;
         }
 
         /* TODO: add keys */
 
-        ngx_http_file_cache_create_key(r); /* 脡煤鲁脡 md5sum(key) 潞脥 crc32(key)虏垄录脝脣茫 `c->header_start` 脰碌 */
+        ngx_http_file_cache_create_key(r); /* 生成 md5sum(key) 和 crc32(key)并计算 `c->header_start` 值 */
 
         if (r->cache->header_start + 256 >= u->conf->buffer_size) {
             ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
@@ -1033,21 +1033,21 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
             return NGX_DECLINED;
         }
 
-        u->cacheable = 1;/* 脛卢脠脧脣霉脫脨脟毛脟贸碌脛脧矛脫娄陆谩鹿没露录脢脟驴脡卤禄禄潞麓忙碌脛 */
+        u->cacheable = 1;/* 默认所有请求的响应结果都是可被缓存的 */
 
         c = r->cache;
 
         
-        /* 潞贸脨酶禄谩陆酶脨脨碌梅脮没 */
+        /* 后续会进行调整 */
         c->body_start = u->conf->buffer_size; //xxx_buffer_size(fastcgi_buffer_size proxy_buffer_size memcached_buffer_size)
-        c->min_uses = u->conf->cache_min_uses; //Proxy_cache_min_uses number 脛卢脠脧脦陋1拢卢碌卤驴脥禄搂露脣路垄脣脥脧脿脥卢脟毛脟贸麓茂碌陆鹿忙露篓麓脦脢媒潞贸拢卢nginx虏脜露脭脧矛脫娄脢媒戮脻陆酶脨脨禄潞麓忙拢禄
+        c->min_uses = u->conf->cache_min_uses; //Proxy_cache_min_uses number 默认为1，当客户端发送相同请求达到规定次数后，nginx才对响应数据进行缓存；
         c->file_cache = cache;
 
         /*
-          赂霉戮脻脜盲脰脙脦脛录镁脰脨 ( fastcgi_cache_bypass ) 禄潞麓忙脠脝鹿媒脤玫录镁潞脥脟毛脟贸脨脜脧垄拢卢脜脨露脧脢脟路帽脫娄赂脙 
-          录脤脨酶鲁垄脢脭脢鹿脫脙禄潞麓忙脢媒戮脻脧矛脫娄赂脙脟毛脟贸拢潞 
+          根据配置文件中 ( fastcgi_cache_bypass ) 缓存绕过条件和请求信息，判断是否应该 
+          继续尝试使用缓存数据响应该请求： 
           */
-        switch (ngx_http_test_predicates(r, u->conf->cache_bypass)) {//脜脨露脧脢脟路帽脫娄赂脙鲁氓禄潞麓忙脰脨脠隆拢卢禄鹿脢脟麓脫潞贸露脣路镁脦帽脝梅脠隆
+        switch (ngx_http_test_predicates(r, u->conf->cache_bypass)) {//判断是否应该冲缓存中取，还是从后端服务器取
 
         case NGX_ERROR:
             return NGX_ERROR;
@@ -1056,7 +1056,7 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
             u->cache_status = NGX_HTTP_CACHE_BYPASS;
             return NGX_DECLINED;
 
-        default: /* NGX_OK */ //脫娄赂脙麓脫潞贸露脣路镁脦帽脝梅脰脴脨脗禄帽脠隆
+        default: /* NGX_OK */ //应该从后端服务器重新获取
             break;
         }
 
@@ -1077,8 +1077,8 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
     case NGX_HTTP_CACHE_UPDATING:
         
         if (u->conf->cache_use_stale & NGX_HTTP_UPSTREAM_FT_UPDATING) {
-            //脠莽鹿没脡猫脰脙脕脣fastcgi_cache_use_stale updating拢卢卤铆脢戮脣碌脣盲脠禄赂脙禄潞麓忙脦脛录镁脢搂脨搂脕脣拢卢脪脩戮颅脫脨脝盲脣没驴脥禄搂露脣脟毛脟贸脭脷禄帽脠隆潞贸露脣脢媒戮脻拢卢碌芦脢脟脧脰脭脷禄鹿脙禄脫脨禄帽脠隆脥锚脮没拢卢
-            //脮芒脢卤潞貌戮脥驴脡脪脭掳脩脪脭脟掳鹿媒脝脷碌脛禄潞麓忙路垄脣脥赂酶碌卤脟掳脟毛脟贸碌脛驴脥禄搂露脣
+            //如果设置了fastcgi_cache_use_stale updating，表示说虽然该缓存文件失效了，已经有其他客户端请求在获取后端数据，但是现在还没有获取完整，
+            //这时候就可以把以前过期的缓存发送给当前请求的客户端
             u->cache_status = rc;
             rc = NGX_OK;
 
@@ -1088,7 +1088,7 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
         break;
 
-    case NGX_OK: //禄潞麓忙脮媒鲁拢脙眉脰脨
+    case NGX_OK: //缓存正常命中
         u->cache_status = NGX_HTTP_CACHE_HIT;
     }
 
@@ -1104,7 +1104,7 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
         break;
 
-    case NGX_HTTP_CACHE_STALE: //卤铆脢戮禄潞麓忙鹿媒脝脷拢卢录没脡脧脙忙碌脛ngx_http_file_cache_open->ngx_http_file_cache_read
+    case NGX_HTTP_CACHE_STALE: //表示缓存过期，见上面的ngx_http_file_cache_open->ngx_http_file_cache_read
 
         c->valid_sec = 0;
         u->buffer.start = NULL;
@@ -1112,8 +1112,8 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
         break;
 
-    //脠莽鹿没路碌禄脴脮芒赂枚拢卢禄谩掳脩cached脰脙0拢卢路碌禄脴鲁枚脠楼潞贸脰禄脫脨麓脫潞贸露脣麓脫脨脗禄帽脠隆脢媒戮脻
-    case NGX_DECLINED: //卤铆脢戮禄潞麓忙脦脛录镁麓忙脭脷拢卢禄帽脠隆禄潞麓忙脦脛录镁脰脨脟掳脙忙碌脛脥路虏驴虏驴路脰录矛虏茅脫脨脦脢脤芒拢卢脙禄脫脨脥篓鹿媒录矛虏茅隆拢禄貌脮脽禄潞麓忙脦脛录镁虏禄麓忙脭脷(碌脷脪禄麓脦脟毛脟贸赂脙uri禄貌脮脽脙禄脫脨麓茂碌陆驴陋脢录禄潞麓忙碌脛脟毛脟贸麓脦脢媒)
+    //如果返回这个，会把cached置0，返回出去后只有从后端从新获取数据
+    case NGX_DECLINED: //表示缓存文件存在，获取缓存文件中前面的头部部分检查有问题，没有通过检查。或者缓存文件不存在(第一次请求该uri或者没有达到开始缓存的请求次数)
 
         if ((size_t) (u->buffer.end - u->buffer.start) < u->conf->buffer_size) {
             u->buffer.start = NULL;
@@ -1125,9 +1125,9 @@ ngx_http_upstream_cache(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
         break;
 
-    case NGX_HTTP_CACHE_SCARCE: //脙禄脫脨麓茂碌陆脟毛脟贸麓脦脢媒拢卢脰禄脫脨麓茂碌陆脟毛脟贸麓脦脢媒虏脜禄谩禄潞麓忙
+    case NGX_HTTP_CACHE_SCARCE: //没有达到请求次数，只有达到请求次数才会缓存
 
-        u->cacheable = 0;//脮芒脌茂脰脙0拢卢戮脥脢脟脣碌脠莽鹿没脜盲脰脙5麓脦驴陋脢录禄潞麓忙拢卢脭貌脟掳脙忙4麓脦露录虏禄禄谩禄潞麓忙拢卢掳脩cacheable脰脙0戮脥虏禄禄谩禄潞麓忙脕脣
+        u->cacheable = 0;//这里置0，就是说如果配置5次开始缓存，则前面4次都不会缓存，把cacheable置0就不会缓存了
 
         break;
 
@@ -1163,14 +1163,14 @@ ngx_http_upstream_cache_get(ngx_http_request_t *r, ngx_http_upstream_t *u,
     ngx_http_file_cache_t  **caches;
 
     if (u->conf->cache_zone) { 
-    //禄帽脠隆proxy_cache脡猫脰脙碌脛鹿虏脧铆脛脷麓忙驴茅脙没拢卢脰卤陆脫路碌禄脴u->conf->cache_zone->data(脮芒赂枚脢脟脭脷proxy_cache_path fastcgi_cache_path脡猫脰脙碌脛)拢卢脪貌麓脣卤脴脨毛脥卢脢卤脡猫脰脙
-    //proxy_cache潞脥proxy_cache_path
+    //获取proxy_cache设置的共享内存块名，直接返回u->conf->cache_zone->data(这个是在proxy_cache_path fastcgi_cache_path设置的)，因此必须同时设置
+    //proxy_cache和proxy_cache_path
         *cache = u->conf->cache_zone->data;
         ngx_log_debugall(r->connection->log, 0, "ngx http upstream cache get use keys_zone:%V", &u->conf->cache_zone->shm.name);
         return NGX_OK;
     }
 
-    //脣碌脙梅proxy_cache xxx$ss脰脨麓酶脫脨虏脦脢媒
+    //说明proxy_cache xxx$ss中带有参数
     if (ngx_http_complex_value(r, u->conf->cache_value, &val) != NGX_OK) {
         return NGX_ERROR;
     }
@@ -1181,9 +1181,9 @@ ngx_http_upstream_cache_get(ngx_http_request_t *r, ngx_http_upstream_t *u,
         return NGX_DECLINED;
     }
 
-    caches = u->caches->elts; //脭脷proxy_cache_path脡猫脰脙碌脛zone_key脰脨虏茅脮脪脫脨脙禄脫脨露脭脫娄碌脛鹿虏脧铆脛脷麓忙脙没//keys_zone=fcgi:10m脰脨碌脛fcgi
+    caches = u->caches->elts; //在proxy_cache_path设置的zone_key中查找有没有对应的共享内存名//keys_zone=fcgi:10m中的fcgi
 
-    for (i = 0; i < u->caches->nelts; i++) {//脭脷u->caches脰脨虏茅脮脪proxy_cache禄貌脮脽fastcgi_cache xxx$ss陆芒脦枚鲁枚碌脛xxx$ss脳脰路没麓庐拢卢脢脟路帽脫脨脧脿脥卢碌脛
+    for (i = 0; i < u->caches->nelts; i++) {//在u->caches中查找proxy_cache或者fastcgi_cache xxx$ss解析出的xxx$ss字符串，是否有相同的
         name = &caches[i]->shm_zone->shm.name;
 
         if (name->len == val.len
@@ -1211,13 +1211,13 @@ ngx_http_upstream_cache_send(ngx_http_request_t *r, ngx_http_upstream_t *u)
     c = r->cache;
 
     /*
-    root@root:/var/yyz# cat cache_xxx/f/27/46492fbf0d9d35d3753c66851e81627f   路芒掳眉鹿媒鲁脤录没ngx_http_file_cache_set_header
+    root@root:/var/yyz# cat cache_xxx/f/27/46492fbf0d9d35d3753c66851e81627f   封包过程见ngx_http_file_cache_set_header
      3hwhdBw
      KEY: /test2.php
      
      X-Powered-By: PHP/5.2.13
      Content-type: text/html
-    //body_start戮脥脢脟脡脧脙忙脮芒脪禄露脦脛脷麓忙脛脷脠脻鲁陇露脠
+    //body_start就是上面这一段内存内容长度
     
      <Html> 
      <title>file update</title>
@@ -1229,10 +1229,10 @@ ngx_http_upstream_cache_send(ngx_http_request_t *r, ngx_http_upstream_t *u)
      </body> 
      </html>
     
-     脳垄脪芒碌脷脠媒脨脨脛脛脌茂脝盲脢碌脫脨8脳脰陆脷碌脛fastcgi卤铆脢戮脥路虏驴陆谩鹿鹿ngx_http_fastcgi_header_t拢卢脥篓鹿媒vi cache_xxx/f/27/46492fbf0d9d35d3753c66851e81627f驴脡脪脭驴麓鲁枚
+     注意第三行哪里其实有8字节的fastcgi表示头部结构ngx_http_fastcgi_header_t，通过vi cache_xxx/f/27/46492fbf0d9d35d3753c66851e81627f可以看出
     
      offset    0  1  2  3   4  5  6  7   8  9  a  b   c  d  e  f  0123456789abcdef
-    00000000 <03>00 00 00  ab 53 83 56  ff ff ff ff  2b 02 82 56  ....芦S.V+..V
+    00000000 <03>00 00 00  ab 53 83 56  ff ff ff ff  2b 02 82 56  ....玈.V+..V
     00000010  64 42 77 17  00 00 91 00  ce 00 00 00  00 00 00 00  dBw...........
     00000020  00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00  ................
     00000030  00 00 00 00  00 00 00 00  00 00 00 00  00 00 00 00  ................
@@ -1267,9 +1267,9 @@ ngx_http_upstream_cache_send(ngx_http_request_t *r, ngx_http_upstream_t *u)
     000001e0  0d 0a 3c 2f  68 74 6d 6c  3e 20 0d 0a               ..</html> ..
     
     
-    header_start: [ngx_http_file_cache_header_t]["\nKEY: "][fastcgi_cache_key脰脨碌脛KEY]["\n"] 脪虏戮脥脢脟脡脧脙忙碌脛碌脷脪禄脨脨潞脥碌脷露镁脨脨
-    body_start: [ngx_http_file_cache_header_t]["\nKEY: "][fastcgi_cache_key脰脨碌脛KEY]["\n"][header]脪虏戮脥脢脟脡脧脙忙碌脛碌脷脪禄碌陆碌脷脦氓脨脨脛脷脠脻
-    脪貌麓脣:body_start = header_start + [header]虏驴路脰(脌媒脠莽fastcgi路碌禄脴碌脛脥路虏驴脨脨卤锚脢露虏驴路脰)
+    header_start: [ngx_http_file_cache_header_t]["\nKEY: "][fastcgi_cache_key中的KEY]["\n"] 也就是上面的第一行和第二行
+    body_start: [ngx_http_file_cache_header_t]["\nKEY: "][fastcgi_cache_key中的KEY]["\n"][header]也就是上面的第一到第五行内容
+    因此:body_start = header_start + [header]部分(例如fastcgi返回的头部行标识部分)
          */ 
 
     if (c->header_start == c->body_start) {
@@ -1278,10 +1278,10 @@ ngx_http_upstream_cache_send(ngx_http_request_t *r, ngx_http_upstream_t *u)
     }
 
     /* TODO: cache stack */
-    //ngx_http_file_cache_open->ngx_http_file_cache_read脰脨c->buf->last脰赂脧貌脕脣露脕脠隆碌陆碌脛脢媒戮脻碌脛脛漏脦虏
+    //ngx_http_file_cache_open->ngx_http_file_cache_read中c->buf->last指向了读取到的数据的末尾
     u->buffer = *c->buf;
-//脰赂脧貌[ngx_http_file_cache_header_t]["\nKEY: "][fastcgi_cache_key脰脨碌脛KEY]["\n"][header]脰脨碌脛[header]驴陋脢录麓娄拢卢脪虏戮脥脢脟脟掳脙忙碌脛"X-Powered-By: PHP/5.2.13"
-    u->buffer.pos += c->header_start; //脰赂脧貌潞贸露脣路碌禄脴鹿媒脌麓碌脛脢媒戮脻驴陋脢录麓娄(潞贸露脣路碌禄脴碌脛脭颅脢录脥路虏驴脨脨+脥酶脪鲁掳眉脤氓脢媒戮脻)
+//指向[ngx_http_file_cache_header_t]["\nKEY: "][fastcgi_cache_key中的KEY]["\n"][header]中的[header]开始处，也就是前面的"X-Powered-By: PHP/5.2.13"
+    u->buffer.pos += c->header_start; //指向后端返回过来的数据开始处(后端返回的原始头部行+网页包体数据)
 
     ngx_memzero(&u->headers_in, sizeof(ngx_http_upstream_headers_in_t));
     u->headers_in.content_length_n = -1;
@@ -1294,10 +1294,10 @@ ngx_http_upstream_cache_send(ngx_http_request_t *r, ngx_http_upstream_t *u)
         return NGX_ERROR;
     }
 
-    rc = u->process_header(r); //掳脩潞贸露脣路碌禄脴鹿媒脌麓碌脛脥路虏驴脨脨脨脜脧垄鲁枚脠楼fastcgi脥路虏驴8脳脰陆脷脪脭脥芒碌脛脢媒戮脻虏驴路脰碌陆
+    rc = u->process_header(r); //把后端返回过来的头部行信息出去fastcgi头部8字节以外的数据部分到
 
     if (rc == NGX_OK) {
-        //掳脩潞贸露脣脥路虏驴脨脨脰脨碌脛脧脿鹿脴脢媒戮脻陆芒脦枚碌陆u->headers_in脰脨
+        //把后端头部行中的相关数据解析到u->headers_in中
         if (ngx_http_upstream_process_headers(r, u) != NGX_OK) {
             return NGX_DONE;
         }
@@ -1393,8 +1393,8 @@ failed:
     ngx_http_run_posted_requests(c);
 }
 
-//驴脥禄搂露脣脢脗录镁麓娄脌铆handler脪禄掳茫(write(read)->handler)脪禄掳茫脦陋ngx_http_request_handler拢卢 潞脥潞贸露脣碌脛handler脪禄掳茫(write(read)->handler)脪禄掳茫脦陋ngx_http_upstream_handler拢卢 潞脥潞贸露脣碌脛
-//潞脥潞贸露脣路镁脦帽脝梅碌脛露脕脨麓脢脗录镁麓楼路垄潞贸脳脽碌陆脮芒脌茂
+//客户端事件处理handler一般(write(read)->handler)一般为ngx_http_request_handler， 和后端的handler一般(write(read)->handler)一般为ngx_http_upstream_handler， 和后端的
+//和后端服务器的读写事件触发后走到这里
 static void
 ngx_http_upstream_handler(ngx_event_t *ev)
 {
@@ -1413,11 +1413,11 @@ ngx_http_upstream_handler(ngx_event_t *ev)
 
     ngx_log_debug3(NGX_LOG_DEBUG_HTTP, c->log, 0, "http upstream request(ev->write:%d): \"%V?%V\"", writef, &r->uri, &r->args);
 
-    //碌卤ev脦陋ngx_connection_t->write 脛卢脠脧write脦陋1拢禄碌卤ev脦陋ngx_connection_t->read 脛卢脠脧write脦陋0
-    if (ev->write) { //脣碌脙梅脢脟c->write脢脗录镁
+    //当ev为ngx_connection_t->write 默认write为1；当ev为ngx_connection_t->read 默认write为0
+    if (ev->write) { //说明是c->write事件
         u->write_event_handler(r, u);//ngx_http_upstream_send_request_handler
 
-    } else { //脣碌脙梅脢脟c->read脢脗录镁
+    } else { //说明是c->read事件
         u->read_event_handler(r, u); //ngx_http_upstream_process_header ngx_http_upstream_process_non_buffered_upstream
         
     }
@@ -1430,7 +1430,7 @@ ngx_http_upstream_handler(ngx_event_t *ev)
 2025/04/24 05:31:47[                ngx_epoll_add_event,  1400]  [debug] 15507#15507: *1 epoll modify read and write event: fd:11 op:3 ev:80002005
 025/04/24 05:31:47[           ngx_epoll_process_events,  1624]  [debug] 15507#15507: begin to epoll_wait, epoll timer: 60000 
 2025/04/24 05:31:47[           ngx_epoll_process_events,  1709]  [debug] 15507#15507: epoll: fd:11 epoll-out(ev:0004) d:B26A00E8
-脢碌录脢脡脧脢脟脥篓鹿媒ngx_http_upstream_init脰脨碌脛mod epoll_ctl脤铆录脫露脕脨麓脢脗录镁麓楼路垄碌脛
+实际上是通过ngx_http_upstream_init中的mod epoll_ctl添加读写事件触发的
 */
 static void
 ngx_http_upstream_rd_check_broken_connection(ngx_http_request_t *r)
@@ -1443,7 +1443,7 @@ ngx_http_upstream_rd_check_broken_connection(ngx_http_request_t *r)
 2025/04/24 05:31:47[                ngx_epoll_add_event,  1400]  [debug] 15507#15507: *1 epoll modify read and write event: fd:11 op:3 ev:80002005
 025/04/24 05:31:47[           ngx_epoll_process_events,  1624]  [debug] 15507#15507: begin to epoll_wait, epoll timer: 60000 
 2025/04/24 05:31:47[           ngx_epoll_process_events,  1709]  [debug] 15507#15507: epoll: fd:11 epoll-out(ev:0004) d:B26A00E8
-脢碌录脢脡脧脢脟脥篓鹿媒ngx_http_upstream_init脰脨碌脛mod epoll_ctl脤铆录脫露脕脨麓脢脗录镁麓楼路垄碌脛
+实际上是通过ngx_http_upstream_init中的mod epoll_ctl添加读写事件触发的
 */
 static void
 ngx_http_upstream_wr_check_broken_connection(ngx_http_request_t *r)
@@ -1456,8 +1456,8 @@ ngx_http_upstream_wr_check_broken_connection(ngx_http_request_t *r)
 2025/04/24 05:31:47[                ngx_epoll_add_event,  1400]  [debug] 15507#15507: *1 epoll modify read and write event: fd:11 op:3 ev:80002005
 025/04/24 05:31:47[           ngx_epoll_process_events,  1624]  [debug] 15507#15507: begin to epoll_wait, epoll timer: 60000 
 2025/04/24 05:31:47[           ngx_epoll_process_events,  1709]  [debug] 15507#15507: epoll: fd:11 epoll-out(ev:0004) d:B26A00E8
-脢碌录脢脡脧脢脟脥篓鹿媒ngx_http_upstream_init脰脨碌脛mod epoll_ctl脤铆录脫露脕脨麓脢脗录镁麓楼路垄碌脛拢卢碌卤卤戮麓脦脩颅禄路脥脣禄脴碌陆ngx_worker_process_cycle ..->ngx_epoll_process_events
-碌脛脢卤潞貌拢卢戮脥禄谩麓楼路垄epoll_out,麓脫露酶脰麓脨脨ngx_http_upstream_wr_check_broken_connection
+实际上是通过ngx_http_upstream_init中的mod epoll_ctl添加读写事件触发的，当本次循环退回到ngx_worker_process_cycle ..->ngx_epoll_process_events
+的时候，就会触发epoll_out,从而执行ngx_http_upstream_wr_check_broken_connection
 */
 static void
 ngx_http_upstream_check_broken_connection(ngx_http_request_t *r,
@@ -1649,14 +1649,14 @@ ngx_http_upstream_check_broken_connection(ngx_http_request_t *r,
 }
 
 /*
-upstream禄煤脰脝脫毛脡脧脫脦路镁脦帽脝梅脢脟脥篓鹿媒TCP陆篓脕垄脕卢陆脫碌脛拢卢脰脷脣霉脰脺脰陋拢卢陆篓脕垄TCP脕卢陆脫脨猫脪陋脠媒麓脦脦脮脢脰拢卢露酶脠媒麓脦脦脮脢脰脧没潞脛碌脛脢卤录盲脢脟虏禄驴脡驴脴碌脛隆拢脦陋脕脣卤拢脰陇陆篓脕垄TCP
-脕卢陆脫脮芒赂枚虏脵脳梅虏禄禄谩脳猫脠没陆酶鲁脤拢卢Nginx脢鹿脫脙脦脼脳猫脠没碌脛脤脳陆脫脳脰脌麓脕卢陆脫脡脧脫脦路镁脦帽脝梅隆拢碌梅脫脙碌脛ngx_http_upstream_connect路陆路篓戮脥脢脟脫脙脌麓脕卢陆脫脡脧脫脦路镁脦帽脝梅碌脛拢卢
-脫脡脫脷脢鹿脫脙脕脣路脟脳猫脠没碌脛脤脳陆脫脳脰拢卢碌卤路陆路篓路碌禄脴脢卤脫毛脡脧脫脦脰庐录盲碌脛TCP脕卢陆脫脦麓卤脴禄谩鲁脡鹿娄陆篓脕垄拢卢驴脡脛脺禄鹿脨猫脪陋碌脠麓媒脡脧脫脦路镁脦帽脝梅路碌禄脴TCP碌脛SYN/ACK掳眉隆拢脪貌麓脣拢卢
-ngx_http_upstream_connect路陆路篓脰梅脪陋赂潞脭冒路垄脝冒陆篓脕垄脕卢陆脫脮芒赂枚露炉脳梅拢卢脠莽鹿没脮芒赂枚路陆路篓脙禄脫脨脕垄驴脤路碌禄脴鲁脡鹿娄拢卢脛脟脙麓脨猫脪陋脭脷epoll脰脨录脿驴脴脮芒赂枚脤脳陆脫脳脰拢卢碌卤
-脣眉鲁枚脧脰驴脡脨麓脢脗录镁脢卤拢卢戮脥脣碌脙梅脕卢陆脫脪脩戮颅陆篓脕垄鲁脡鹿娄脕脣隆拢
+upstream机制与上游服务器是通过TCP建立连接的，众所周知，建立TCP连接需要三次握手，而三次握手消耗的时间是不可控的。为了保证建立TCP
+连接这个操作不会阻塞进程，Nginx使用无阻塞的套接字来连接上游服务器。调用的ngx_http_upstream_connect方法就是用来连接上游服务器的，
+由于使用了非阻塞的套接字，当方法返回时与上游之间的TCP连接未必会成功建立，可能还需要等待上游服务器返回TCP的SYN/ACK包。因此，
+ngx_http_upstream_connect方法主要负责发起建立连接这个动作，如果这个方法没有立刻返回成功，那么需要在epoll中监控这个套接字，当
+它出现可写事件时，就说明连接已经建立成功了。
 
-//碌梅脫脙socket,connect脕卢陆脫脪禄赂枚潞贸露脣碌脛peer,脠禄潞贸脡猫脰脙露脕脨麓脢脗录镁禄脴碌梅潞炉脢媒拢卢陆酶脠毛路垄脣脥脢媒戮脻碌脛ngx_http_upstream_send_request脌茂脙忙
-//脮芒脌茂赂潞脭冒脕卢陆脫潞贸露脣路镁脦帽拢卢脠禄潞贸脡猫脰脙赂梅赂枚露脕脨麓脢脗录镁禄脴碌梅隆拢脳卯潞贸脠莽鹿没脕卢陆脫陆篓脕垄鲁脡鹿娄拢卢禄谩碌梅脫脙ngx_http_upstream_send_request陆酶脨脨脢媒戮脻路垄脣脥隆拢
+//调用socket,connect连接一个后端的peer,然后设置读写事件回调函数，进入发送数据的ngx_http_upstream_send_request里面
+//这里负责连接后端服务，然后设置各个读写事件回调。最后如果连接建立成功，会调用ngx_http_upstream_send_request进行数据发送。
 */
 static void
 ngx_http_upstream_connect(ngx_http_request_t *r, ngx_http_upstream_t *u)
@@ -1682,15 +1682,15 @@ ngx_http_upstream_connect(ngx_http_request_t *r, ngx_http_upstream_t *u)
     u->state->response_time = ngx_current_msec;
     u->state->connect_time = (ngx_msec_t) -1;
     u->state->header_time = (ngx_msec_t) -1;
-    //鲁玫脢录赂鲁脰碌录没ngx_http_upstream_connect->ngx_event_connect_peer(&u->peer);
-    //驴脡脪脭驴麓鲁枚脫脨露脿脡脵赂枚驴脥禄搂露脣脕卢陆脫拢卢nginx戮脥脪陋脫毛php路镁脦帽脝梅陆篓脕垄露脿脡脵赂枚脕卢陆脫拢卢脦陋脢虏脙麓nginx潞脥php路镁脦帽脝梅虏禄脰禄陆篓脕垄脪禄赂枚脕卢陆脫脛脴????????????????
-    rc = ngx_event_connect_peer(&u->peer); //陆篓脕垄脪禄赂枚TCP脤脳陆脫脳脰拢卢脥卢脢卤拢卢脮芒赂枚脤脳陆脫脳脰脨猫脪陋脡猫脰脙脦陋路脟脳猫脠没脛拢脢陆隆拢
+    //初始赋值见ngx_http_upstream_connect->ngx_event_connect_peer(&u->peer);
+    //可以看出有多少个客户端连接，nginx就要与php服务器建立多少个连接，为什么nginx和php服务器不只建立一个连接呢????????????????
+    rc = ngx_event_connect_peer(&u->peer); //建立一个TCP套接字，同时，这个套接字需要设置为非阻塞模式。
 
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http upstream connect: %i", rc);
 
     if (rc == NGX_ERROR) {//
-    //脠么 rc = NGX_ERROR拢卢卤铆脢戮路垄脝冒脕卢陆脫脢搂掳脺拢卢脭貌碌梅脫脙ngx_http_upstream_finalize_request 路陆路篓鹿脴卤脮脕卢陆脫脟毛脟贸拢卢虏垄 return 麓脫碌卤脟掳潞炉脢媒路碌禄脴拢禄
+    //若 rc = NGX_ERROR，表示发起连接失败，则调用ngx_http_upstream_finalize_request 方法关闭连接请求，并 return 从当前函数返回；
         ngx_http_upstream_finalize_request(r, u,
                                            NGX_HTTP_INTERNAL_SERVER_ERROR);
         return;
@@ -1699,14 +1699,14 @@ ngx_http_upstream_connect(ngx_http_request_t *r, ngx_http_upstream_t *u)
     u->state->peer = u->peer.name;
 
     if (rc == NGX_BUSY) {
-    //脠么 rc = NGX_BUSY拢卢卤铆脢戮碌卤脟掳脡脧脫脦路镁脦帽脝梅麓娄脫脷虏禄禄卯脭戮脳麓脤卢拢卢脭貌碌梅脫脙 ngx_http_upstream_next 路陆路篓赂霉戮脻麓芦脠毛碌脛虏脦脢媒鲁垄脢脭脰脴脨脗路垄脝冒脕卢陆脫脟毛脟贸拢卢虏垄 return 麓脫碌卤脟掳潞炉脢媒路碌禄脴拢禄
+    //若 rc = NGX_BUSY，表示当前上游服务器处于不活跃状态，则调用 ngx_http_upstream_next 方法根据传入的参数尝试重新发起连接请求，并 return 从当前函数返回；
         ngx_log_error(NGX_LOG_ERR, r->connection->log, 0, "no live upstreams");
         ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_NOLIVE);
         return;
     }
 
     if (rc == NGX_DECLINED) {
-    //脠么 rc = NGX_DECLINED拢卢卤铆脢戮碌卤脟掳脡脧脫脦路镁脦帽脝梅赂潞脭脴鹿媒脰脴拢卢脭貌碌梅脫脙 ngx_http_upstream_next 路陆路篓鲁垄脢脭脫毛脝盲脣没脡脧脫脦路镁脦帽脝梅陆篓脕垄脕卢陆脫拢卢虏垄 return 麓脫碌卤脟掳潞炉脢媒路碌禄脴拢禄
+    //若 rc = NGX_DECLINED，表示当前上游服务器负载过重，则调用 ngx_http_upstream_next 方法尝试与其他上游服务器建立连接，并 return 从当前函数返回；
         ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_ERROR);
         return;
     }
@@ -1717,17 +1717,17 @@ ngx_http_upstream_connect(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
     c->data = r;
 /*
-脡猫脰脙脡脧脫脦脕卢陆脫 ngx_connection_t 陆谩鹿鹿脤氓碌脛露脕脢脗录镁隆垄脨麓脢脗录镁碌脛禄脴碌梅路陆路篓 handler 露录脦陋 ngx_http_upstream_handler拢卢脡猫脰脙 ngx_http_upstream_t 
-陆谩鹿鹿脤氓碌脛脨麓脢脗录镁 write_event_handler 碌脛禄脴碌梅脦陋 ngx_http_upstream_send_request_handler拢卢露脕脢脗录镁 read_event_handler 碌脛禄脴碌梅路陆路篓脦陋 
-ngx_http_upstream_process_header拢禄
+设置上游连接 ngx_connection_t 结构体的读事件、写事件的回调方法 handler 都为 ngx_http_upstream_handler，设置 ngx_http_upstream_t 
+结构体的写事件 write_event_handler 的回调为 ngx_http_upstream_send_request_handler，读事件 read_event_handler 的回调方法为 
+ngx_http_upstream_process_header；
 */
     c->write->handler = ngx_http_upstream_handler; 
     c->read->handler = ngx_http_upstream_handler;
 
-    //脮芒脪禄虏陆脰猫脢碌录脢脡脧戮枚露篓脕脣脧貌脡脧脫脦路镁脦帽脝梅路垄脣脥脟毛脟贸碌脛路陆路篓脢脟ngx_http_upstream_send_request_handler.
-//脫脡脨麓脢脗录镁(脨麓脢媒戮脻禄貌脮脽驴脥禄搂露脣脕卢陆脫路碌禄脴鲁脡鹿娄)麓楼路垄c->write->handler = ngx_http_upstream_handler;脠禄潞贸脭脷ngx_http_upstream_handler脰脨脰麓脨脨ngx_http_upstream_send_request_handler
-    u->write_event_handler = ngx_http_upstream_send_request_handler; //脠莽鹿没ngx_event_connect_peer路碌禄脴NGX_AGAIN脪虏脥篓鹿媒赂脙潞炉脢媒麓楼路垄脕卢陆脫鲁脡鹿娄
-//脡猫脰脙upstream禄煤脰脝碌脛read_event_handler路陆路篓脦陋ngx_http_upstream_process_header拢卢脪虏戮脥脢脟脫脡ngx_http_upstream_process_header路陆路篓陆脫脢脮脡脧脫脦路镁脦帽脝梅碌脛脧矛脫娄隆拢
+    //这一步骤实际上决定了向上游服务器发送请求的方法是ngx_http_upstream_send_request_handler.
+//由写事件(写数据或者客户端连接返回成功)触发c->write->handler = ngx_http_upstream_handler;然后在ngx_http_upstream_handler中执行ngx_http_upstream_send_request_handler
+    u->write_event_handler = ngx_http_upstream_send_request_handler; //如果ngx_event_connect_peer返回NGX_AGAIN也通过该函数触发连接成功
+//设置upstream机制的read_event_handler方法为ngx_http_upstream_process_header，也就是由ngx_http_upstream_process_header方法接收上游服务器的响应。
     u->read_event_handler = ngx_http_upstream_process_header;
 
     c->sendfile &= r->connection->sendfile;
@@ -1769,7 +1769,7 @@ ngx_http_upstream_process_header拢禄
         && r->request_body->buf
         && r->request_body->temp_file
         && r == r->main) 
-    //驴脥禄搂露脣掳眉脤氓麓忙脠毛脕脣脕脵脢卤脦脛录镁潞贸拢卢脭貌脢鹿脫脙r->request_body->bufs脕麓卤铆脰脨碌脛ngx_buf_t陆谩鹿鹿碌脛file_pos潞脥file_last脰赂脧貌拢卢脣霉脪脭r->request_body->buf驴脡脪脭录脤脨酶露脕脠隆掳眉脤氓
+    //客户端包体存入了临时文件后，则使用r->request_body->bufs链表中的ngx_buf_t结构的file_pos和file_last指向，所以r->request_body->buf可以继续读取包体
     {
         /*
          * the r->request_body->buf can be reused for one request only,
@@ -1794,13 +1794,13 @@ ngx_http_upstream_process_header拢禄
 
     u->request_sent = 0;
     
-    if (rc == NGX_AGAIN) { //脮芒脌茂碌脛露篓脢卤脝梅脭脷ngx_http_upstream_send_request禄谩脡戮鲁媒
+    if (rc == NGX_AGAIN) { //这里的定时器在ngx_http_upstream_send_request会删除
             /*
             2025/04/24 02:54:29[             ngx_event_connect_peer,    32]  [debug] 14867#14867: *1 socket 12
 2025/04/24 02:54:29[           ngx_epoll_add_connection,  1486]  [debug] 14867#14867: *1 epoll add connection: fd:12 ev:80002005
 2025/04/24 02:54:29[             ngx_event_connect_peer,   125]  [debug] 14867#14867: *1 connect to 127.0.0.1:3666, fd:12 #2
-2025/04/24 02:54:29[          ngx_http_upstream_connect,  1549]  [debug] 14867#14867: *1 http upstream connect: -2 //路碌禄脴NGX_AGAIN
-2025/04/24 02:54:29[                ngx_event_add_timer,    88]  [debug] 14867#14867: *1 <ngx_http_upstream_connect,  1665>  event timer add: 12: 60000:1677807811 //脮芒脌茂脤铆录脫
+2025/04/24 02:54:29[          ngx_http_upstream_connect,  1549]  [debug] 14867#14867: *1 http upstream connect: -2 //返回NGX_AGAIN
+2025/04/24 02:54:29[                ngx_event_add_timer,    88]  [debug] 14867#14867: *1 <ngx_http_upstream_connect,  1665>  event timer add: 12: 60000:1677807811 //这里添加
 2025/04/24 02:54:29[          ngx_http_finalize_request,  2526]  [debug] 14867#14867: *1 http finalize request: -4, "/test.php?" a:1, c:2
 2025/04/24 02:54:29[             ngx_http_close_request,  3789]  [debug] 14867#14867: *1 http request count:2 blk:0
 2025/04/24 02:54:29[           ngx_worker_process_cycle,  1110]  [debug] 14867#14867: worker(14867) cycle again
@@ -1826,23 +1826,23 @@ ngx_http_upstream_process_header拢禄
 2025/04/24 02:54:29[                   ngx_chain_writer,   704]  [debug] 14867#14867: *1 chain writer in: 080EC838
 2025/04/24 02:54:29[                         ngx_writev,   192]  [debug] 14867#14867: *1 writev: 968 of 968
 2025/04/24 02:54:29[                   ngx_chain_writer,   740]  [debug] 14867#14867: *1 chain writer out: 00000000
-2025/04/24 02:54:29[                ngx_event_del_timer,    39]  [debug] 14867#14867: *1 <ngx_http_upstream_send_request,  2052>  event timer del: 12: 1677807811//脮芒脌茂脡戮鲁媒
+2025/04/24 02:54:29[                ngx_event_del_timer,    39]  [debug] 14867#14867: *1 <ngx_http_upstream_send_request,  2052>  event timer del: 12: 1677807811//这里删除
 2025/04/24 02:54:29[                ngx_event_add_timer,    88]  [debug] 14867#14867: *1 <ngx_http_upstream_send_request,  2075>  event timer add: 12: 60000:1677807813
            */
         /*
-          脠么 rc = NGX_AGAIN拢卢卤铆脢戮碌卤脟掳脪脩戮颅路垄脝冒脕卢陆脫拢卢碌芦脢脟脙禄脫脨脢脮碌陆脡脧脫脦路镁脦帽脝梅碌脛脠路脠脧脫娄麓冒卤篓脦脛拢卢录麓脡脧脫脦脕卢陆脫碌脛脨麓脢脗录镁虏禄驴脡脨麓拢卢脭貌脨猫碌梅脫脙 ngx_add_timer 
-          路陆路篓陆芦脡脧脫脦脕卢陆脫碌脛脨麓脢脗录镁脤铆录脫碌陆露篓脢卤脝梅脰脨拢卢鹿脺脌铆鲁卢脢卤脠路脠脧脫娄麓冒拢禄
+          若 rc = NGX_AGAIN，表示当前已经发起连接，但是没有收到上游服务器的确认应答报文，即上游连接的写事件不可写，则需调用 ngx_add_timer 
+          方法将上游连接的写事件添加到定时器中，管理超时确认应答；
             
-          脮芒脪禄虏陆麓娄脌铆路脟脳猫脠没碌脛脕卢陆脫脡脨脦麓鲁脡鹿娄陆篓脕垄脢卤碌脛露炉脳梅隆拢脢碌录脢脡脧拢卢脭脷ngx_event_connect_peer脰脨拢卢脤脳陆脫脳脰脪脩戮颅录脫脠毛碌陆epoll脰脨录脿驴脴脕脣拢卢脪貌麓脣拢卢
-          脮芒脪禄虏陆陆芦碌梅脫脙ngx_add_timer路陆路篓掳脩脨麓脢脗录镁脤铆录脫碌陆露篓脢卤脝梅脰脨拢卢鲁卢脢卤脢卤录盲脦陋ngx_http_upstream_conf_t陆谩鹿鹿脤氓脰脨碌脛connect_timeout
-          鲁脡脭卤拢卢脮芒脢脟脭脷脡猫脰脙陆篓脕垄TCP脕卢陆脫碌脛鲁卢脢卤脢卤录盲隆拢
-          */ //脮芒脌茂碌脛露篓脢卤脝梅脭脷ngx_http_upstream_send_request禄谩脡戮鲁媒
+          这一步处理非阻塞的连接尚未成功建立时的动作。实际上，在ngx_event_connect_peer中，套接字已经加入到epoll中监控了，因此，
+          这一步将调用ngx_add_timer方法把写事件添加到定时器中，超时时间为ngx_http_upstream_conf_t结构体中的connect_timeout
+          成员，这是在设置建立TCP连接的超时时间。
+          */ //这里的定时器在ngx_http_upstream_send_request会删除
         ngx_add_timer(c->write, u->conf->connect_timeout, NGX_FUNC_LINE);
-        return; //麓贸虏驴路脰脟茅驴枚脥篓鹿媒脮芒脌茂路碌禄脴拢卢脠禄潞贸脥篓鹿媒ngx_http_upstream_send_request_handler脌麓脰麓脨脨epoll write脢脗录镁
+        return; //大部分情况通过这里返回，然后通过ngx_http_upstream_send_request_handler来执行epoll write事件
     }
 
     
-//脠么 rc = NGX_OK拢卢卤铆脢戮鲁脡鹿娄陆篓脕垄脕卢陆脫拢卢脭貌碌梅脫脙 ngx_http_upsream_send_request 路陆路篓脧貌脡脧脫脦路镁脦帽脝梅路垄脣脥脟毛脟贸拢禄
+//若 rc = NGX_OK，表示成功建立连接，则调用 ngx_http_upsream_send_request 方法向上游服务器发送请求；
 #if (NGX_HTTP_SSL)
 
     if (u->ssl && c->ssl == NULL) {
@@ -1852,7 +1852,7 @@ ngx_http_upstream_process_header拢禄
 
 #endif
 
-    //脠莽麓么脪脩戮颅鲁脡鹿娄陆篓脕垄脕卢陆脫拢卢脭貌碌梅脫脙ngx_http_upstream_send_request路陆路篓脧貌脡脧脫脦路镁脦帽脝梅路垄脣脥脟毛脟贸
+    //如呆已经成功建立连接，则调用ngx_http_upstream_send_request方法向上游服务器发送请求
     ngx_http_upstream_send_request(r, u, 1);
 }
 
@@ -2170,12 +2170,12 @@ ngx_http_upstream_reinit(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
 static void
 ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
-    ngx_uint_t do_write) //脧貌脡脧脫脦路镁脦帽脝梅路垄脣脥脟毛脟贸   碌卤脪禄麓脦路垄脣脥虏禄脥锚拢卢脥篓鹿媒ngx_http_upstream_send_request_handler脭脵麓脦麓楼路垄路垄脣脥
+    ngx_uint_t do_write) //向上游服务器发送请求   当一次发送不完，通过ngx_http_upstream_send_request_handler再次触发发送
 {
     ngx_int_t          rc;
     ngx_connection_t  *c;
 
-    c = u->peer.connection; //脧貌脡脧脫脦路镁脦帽脝梅碌脛脕卢陆脫脨脜脧垄
+    c = u->peer.connection; //向上游服务器的连接信息
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
                    "http upstream send request");
@@ -2184,9 +2184,9 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
         u->state->connect_time = ngx_current_msec - u->state->response_time;
     }
 
-    //脥篓鹿媒getsockopt虏芒脢脭脫毛脡脧脫脦路镁脦帽脝梅碌脛tcp脕卢陆脫脢脟路帽脪矛鲁拢
-    if (!u->request_sent && ngx_http_upstream_test_connect(c) != NGX_OK) { //虏芒脢脭脕卢陆脫脢搂掳脺
-        ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_ERROR);//脠莽鹿没虏芒脢脭脢搂掳脺拢卢碌梅脫脙ngx_http_upstream_next潞炉脢媒拢卢脮芒赂枚潞炉脢媒驴脡脛脺脭脵麓脦碌梅脫脙peer.get碌梅脫脙卤冒碌脛脕卢陆脫隆拢
+    //通过getsockopt测试与上游服务器的tcp连接是否异常
+    if (!u->request_sent && ngx_http_upstream_test_connect(c) != NGX_OK) { //测试连接失败
+        ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_ERROR);//如果测试失败，调用ngx_http_upstream_next函数，这个函数可能再次调用peer.get调用别的连接。
         return;
     }
 
@@ -2195,8 +2195,8 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
     rc = ngx_http_upstream_send_request_body(r, u, do_write);
 
     if (rc == NGX_ERROR) {
-        /*  脠么路碌禄脴脰碌rc=NGX_ERROR拢卢卤铆脢戮碌卤脟掳脕卢陆脫脡脧鲁枚麓铆拢卢 陆芦麓铆脦贸脨脜脧垄麓芦碌脻赂酶ngx_http_upstream_next路陆路篓拢卢 赂脙路陆路篓赂霉戮脻麓铆脦贸脨脜脧垄戮枚露篓
-        脢脟路帽脰脴脨脗脧貌脡脧脫脦脝盲脣没路镁脦帽脝梅路垄脝冒脕卢陆脫拢禄 虏垄return麓脫碌卤脟掳潞炉脢媒路碌禄脴拢禄 */
+        /*  若返回值rc=NGX_ERROR，表示当前连接上出错， 将错误信息传递给ngx_http_upstream_next方法， 该方法根据错误信息决定
+        是否重新向上游其他服务器发起连接； 并return从当前函数返回； */
         ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_ERROR);
         return;
     }
@@ -2207,21 +2207,21 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
     }
 
     /* 
-         脠么路碌禄脴脰碌rc = NGX_AGAIN拢卢卤铆脢戮脟毛脟贸脢媒戮脻虏垄脦麓脥锚脠芦路垄脣脥拢卢 录麓脫脨脢拢脫脿碌脛脟毛脟贸脢媒戮脻卤拢麓忙脭脷output脰脨拢卢碌芦麓脣脢卤拢卢脨麓脢脗录镁脪脩戮颅虏禄驴脡脨麓拢卢 
-         脭貌碌梅脫脙ngx_add_timer路陆路篓掳脩碌卤脟掳脕卢陆脫脡脧碌脛脨麓脢脗录镁脤铆录脫碌陆露篓脢卤脝梅禄煤脰脝拢卢 虏垄碌梅脫脙ngx_handle_write_event路陆路篓陆芦脨麓脢脗录镁脳垄虏谩碌陆epoll脢脗录镁禄煤脰脝脰脨拢禄 
-     */ //脥篓鹿媒ngx_http_upstream_read_request_handler陆酶脨脨脭脵麓脦epoll write
-    if (rc == NGX_AGAIN) {//脨颅脪茅脮禄禄潞鲁氓脟酶脪脩脗煤拢卢脨猫脪陋碌脠麓媒路垄脣脥脢媒戮脻鲁枚脠楼潞贸鲁枚路垄epoll驴脡脨麓拢卢麓脫露酶录脤脨酶write
+         若返回值rc = NGX_AGAIN，表示请求数据并未完全发送， 即有剩余的请求数据保存在output中，但此时，写事件已经不可写， 
+         则调用ngx_add_timer方法把当前连接上的写事件添加到定时器机制， 并调用ngx_handle_write_event方法将写事件注册到epoll事件机制中； 
+     */ //通过ngx_http_upstream_read_request_handler进行再次epoll write
+    if (rc == NGX_AGAIN) {//协议栈缓冲区已满，需要等待发送数据出去后出发epoll可写，从而继续write
         if (!c->write->ready) {  
-        //脮芒脌茂录脫露篓脢卤脝梅碌脛脭颅脪貌脢脟拢卢脌媒脠莽脦脪掳脩脢媒戮脻脠脫碌陆脨颅脪茅脮禄脕脣拢卢虏垄脟脪脨颅脪茅脮禄脪脩戮颅脗煤脕脣拢卢碌芦脢脟露脭路陆戮脥脢脟虏禄陆脫脢脺脢媒戮脻拢卢脭矛鲁脡脢媒戮脻脪禄脰卤脭脷脨颅脪茅脮禄禄潞麓忙脰脨
-        //脪貌麓脣脰禄脪陋脢媒戮脻路垄脣脥鲁枚脠楼拢卢戮脥禄谩麓楼路垄epoll录脤脨酶脨麓拢卢麓脫露酶脭脷脧脗脙忙脕陆脨脨脡戮鲁媒脨麓鲁卢脢卤露篓脢卤脝梅
+        //这里加定时器的原因是，例如我把数据扔到协议栈了，并且协议栈已经满了，但是对方就是不接受数据，造成数据一直在协议栈缓存中
+        //因此只要数据发送出去，就会触发epoll继续写，从而在下面两行删除写超时定时器
             ngx_add_timer(c->write, u->conf->send_timeout, NGX_FUNC_LINE); 
-            //脠莽鹿没鲁卢脢卤禄谩脰麓脨脨ngx_http_upstream_send_request_handler拢卢脮芒脌茂脙忙露脭脨麓鲁卢脢卤陆酶脨脨麓娄脌铆
+            //如果超时会执行ngx_http_upstream_send_request_handler，这里面对写超时进行处理
 
-        } else if (c->write->timer_set) { //脌媒脠莽ngx_http_upstream_send_request_body路垄脣脥脕脣脠媒麓脦路碌禄脴NGX_AGAIN,脛脟脙麓碌脷露镁麓脦戮脥脨猫脪陋掳脩碌脷脪禄麓脦脡脧脙忙碌脛鲁卢脢卤露篓脢卤脝梅鹿脴脕脣拢卢卤铆脢戮路垄脣脥脮媒鲁拢
+        } else if (c->write->timer_set) { //例如ngx_http_upstream_send_request_body发送了三次返回NGX_AGAIN,那么第二次就需要把第一次上面的超时定时器关了，表示发送正常
             ngx_del_timer(c->write, NGX_FUNC_LINE);
         }
 
-        //脭脷脕卢陆脫潞贸露脣路镁脦帽脝梅conncet脟掳拢卢脫脨脡猫脰脙ngx_add_conn拢卢脌茂脙忙脪脩戮颅陆芦fd脤铆录脫碌陆脕脣露脕脨麓脢脗录镁脰脨拢卢脪貌麓脣脮芒脌茂脢碌录脢脡脧脰禄脢脟录貌碌楼脰麓脨脨脧脗ngx_send_lowat
+        //在连接后端服务器conncet前，有设置ngx_add_conn，里面已经将fd添加到了读写事件中，因此这里实际上只是简单执行下ngx_send_lowat
         if (ngx_handle_write_event(c->write, u->conf->send_lowat, NGX_FUNC_LINE) != NGX_OK) {
             ngx_http_upstream_finalize_request(r, u,
                                                NGX_HTTP_INTERNAL_SERVER_ERROR);
@@ -2232,20 +2232,20 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
     }
 
     /* rc == NGX_OK */ 
-    //脧貌潞贸露脣碌脛脢媒戮脻路垄脣脥脥锚卤脧
+    //向后端的数据发送完毕
 
-    //碌卤路垄脥霉潞贸露脣路镁脦帽脝梅碌脛脢媒戮脻掳眉鹿媒麓贸拢卢脨猫脪陋路脰露脿麓脦路垄脣脥碌脛脢卤潞貌拢卢脭脷脡脧脙忙碌脛if (rc == NGX_AGAIN)脰脨禄谩脤铆录脫露篓脢卤脝梅脌麓麓楼路垄路垄脣脥拢卢脠莽鹿没脨颅脪茅脮禄脪禄脰卤虏禄路垄脣脥脢媒戮脻鲁枚脠楼
-    //戮脥禄谩鲁卢脢卤拢卢脠莽鹿没脢媒戮脻脳卯脰脮脠芦虏驴路垄脣脥鲁枚脠楼脭貌脨猫脪陋脦陋脳卯潞贸脪禄麓脦time_write脤铆录脫脡戮鲁媒虏脵脳梅隆拢
+    //当发往后端服务器的数据包过大，需要分多次发送的时候，在上面的if (rc == NGX_AGAIN)中会添加定时器来触发发送，如果协议栈一直不发送数据出去
+    //就会超时，如果数据最终全部发送出去则需要为最后一次time_write添加删除操作。
 
-    //脠莽鹿没路垄脥霉潞贸露脣碌脛脢媒戮脻鲁陇露脠潞贸脨隆拢卢脭貌脪禄掳茫虏禄禄谩脭脵脡脧脙脜脤铆录脫露篓脢卤脝梅拢卢脮芒脌茂碌脛timer_set驴脧露篓脦陋0拢卢脣霉脪脭脠莽鹿没掳脦碌么潞贸露脣脥酶脧脽拢卢脥篓鹿媒ngx_http_upstream_test_connect
-    //脢脟脜脨露脧虏禄鲁枚潞贸露脣路镁脦帽脝梅碌么脧脽碌脛拢卢脡脧脙忙碌脛ngx_http_upstream_send_request_body禄鹿脢脟禄谩路碌禄脴鲁脡鹿娄碌脛拢卢脣霉脪脭脮芒脌茂脫脨赂枚bug
-    if (c->write->timer_set) { //脮芒脌茂碌脛露篓脢卤脝梅脢脟ngx_http_upstream_connect脰脨connect路碌禄脴NGX_AGAIN碌脛脢卤潞貌脤铆录脫碌脛露篓脢卤脝梅
+    //如果发往后端的数据长度后小，则一般不会再上门添加定时器，这里的timer_set肯定为0，所以如果拔掉后端网线，通过ngx_http_upstream_test_connect
+    //是判断不出后端服务器掉线的，上面的ngx_http_upstream_send_request_body还是会返回成功的，所以这里有个bug
+    if (c->write->timer_set) { //这里的定时器是ngx_http_upstream_connect中connect返回NGX_AGAIN的时候添加的定时器
         /*
 2025/04/24 02:54:29[             ngx_event_connect_peer,    32]  [debug] 14867#14867: *1 socket 12
 2025/04/24 02:54:29[           ngx_epoll_add_connection,  1486]  [debug] 14867#14867: *1 epoll add connection: fd:12 ev:80002005
 2025/04/24 02:54:29[             ngx_event_connect_peer,   125]  [debug] 14867#14867: *1 connect to 127.0.0.1:3666, fd:12 #2
-2025/04/24 02:54:29[          ngx_http_upstream_connect,  1549]  [debug] 14867#14867: *1 http upstream connect: -2 //路碌禄脴NGX_AGAIN
-2025/04/24 02:54:29[                ngx_event_add_timer,    88]  [debug] 14867#14867: *1 <ngx_http_upstream_connect,  1665>  event timer add: 12: 60000:1677807811 //脮芒脌茂脤铆录脫
+2025/04/24 02:54:29[          ngx_http_upstream_connect,  1549]  [debug] 14867#14867: *1 http upstream connect: -2 //返回NGX_AGAIN
+2025/04/24 02:54:29[                ngx_event_add_timer,    88]  [debug] 14867#14867: *1 <ngx_http_upstream_connect,  1665>  event timer add: 12: 60000:1677807811 //这里添加
 2025/04/24 02:54:29[          ngx_http_finalize_request,  2526]  [debug] 14867#14867: *1 http finalize request: -4, "/test.php?" a:1, c:2
 2025/04/24 02:54:29[             ngx_http_close_request,  3789]  [debug] 14867#14867: *1 http request count:2 blk:0
 2025/04/24 02:54:29[           ngx_worker_process_cycle,  1110]  [debug] 14867#14867: worker(14867) cycle again
@@ -2271,13 +2271,13 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
 2025/04/24 02:54:29[                   ngx_chain_writer,   704]  [debug] 14867#14867: *1 chain writer in: 080EC838
 2025/04/24 02:54:29[                         ngx_writev,   192]  [debug] 14867#14867: *1 writev: 968 of 968
 2025/04/24 02:54:29[                   ngx_chain_writer,   740]  [debug] 14867#14867: *1 chain writer out: 00000000
-2025/04/24 02:54:29[                ngx_event_del_timer,    39]  [debug] 14867#14867: *1 <ngx_http_upstream_send_request,  2052>  event timer del: 12: 1677807811//脮芒脌茂脡戮鲁媒
+2025/04/24 02:54:29[                ngx_event_del_timer,    39]  [debug] 14867#14867: *1 <ngx_http_upstream_send_request,  2052>  event timer del: 12: 1677807811//这里删除
 2025/04/24 02:54:29[                ngx_event_add_timer,    88]  [debug] 14867#14867: *1 <ngx_http_upstream_send_request,  2075>  event timer add: 12: 60000:1677807813
            */
         ngx_del_timer(c->write, NGX_FUNC_LINE);
     }
 
-    /* 脠么路碌禄脴脰碌 rc = NGX_OK拢卢卤铆脢戮脪脩戮颅路垄脣脥脥锚脠芦虏驴脟毛脟贸脢媒戮脻拢卢 脳录卤赂陆脫脢脮脌麓脳脭脡脧脫脦路镁脦帽脝梅碌脛脧矛脫娄卤篓脦脛拢卢脭貌脰麓脨脨脪脭脧脗鲁脤脨貌拢禄  */ 
+    /* 若返回值 rc = NGX_OK，表示已经发送完全部请求数据， 准备接收来自上游服务器的响应报文，则执行以下程序；  */ 
     if (c->tcp_nopush == NGX_TCP_NOPUSH_SET) {
         if (ngx_tcp_push(c->fd) == NGX_ERROR) {
             ngx_log_error(NGX_LOG_CRIT, c->log, ngx_socket_errno,
@@ -2290,24 +2290,24 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
         c->tcp_nopush = NGX_TCP_NOPUSH_UNSET;
     }
 
-    u->write_event_handler = ngx_http_upstream_dummy_handler; //脢媒戮脻脪脩戮颅脭脷脟掳脙忙脠芦虏驴路垄脥霉潞贸露脣路镁脦帽脝梅脕脣拢卢脣霉脪脭虏禄脨猫脪陋脭脵脳枚脨麓麓娄脌铆
+    u->write_event_handler = ngx_http_upstream_dummy_handler; //数据已经在前面全部发往后端服务器了，所以不需要再做写处理
 
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0, "send out chain data to uppeer server OK");
-    //脭脷脕卢陆脫潞贸露脣路镁脦帽脝梅conncet脟掳拢卢脫脨脡猫脰脙ngx_add_conn拢卢脌茂脙忙脪脩戮颅陆芦fd脤铆录脫碌陆脕脣露脕脨麓脢脗录镁脰脨拢卢脪貌麓脣脮芒脌茂脢碌录脢脡脧脰禄脢脟录貌碌楼脰麓脨脨脧脗ngx_send_lowat
+    //在连接后端服务器conncet前，有设置ngx_add_conn，里面已经将fd添加到了读写事件中，因此这里实际上只是简单执行下ngx_send_lowat
     if (ngx_handle_write_event(c->write, 0, NGX_FUNC_LINE) != NGX_OK) {
         ngx_http_upstream_finalize_request(r, u,
                                            NGX_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
-    //脮芒禄脴脢媒戮脻脪脩戮颅路垄脣脥脕脣拢卢驴脡脪脭脳录卤赂陆脫脢脮脕脣拢卢脡猫脰脙陆脫脢脮潞贸露脣脫娄麓冒碌脛鲁卢脢卤露篓脢卤脝梅隆拢 
+    //这回数据已经发送了，可以准备接收了，设置接收后端应答的超时定时器。 
     /* 
-        赂脙露篓脢卤脝梅脭脷脢脮碌陆潞贸露脣脫娄麓冒脢媒戮脻潞贸脡戮鲁媒拢卢录没ngx_event_pipe 
+        该定时器在收到后端应答数据后删除，见ngx_event_pipe 
         if (rev->timer_set) {
             ngx_del_timer(rev, NGX_FUNC_LINE);
         }
      */
-    ngx_add_timer(c->read, u->conf->read_timeout, NGX_FUNC_LINE); //脠莽鹿没鲁卢脢卤脭脷赂脙潞炉脢媒录矛虏芒ngx_http_upstream_process_header
+    ngx_add_timer(c->read, u->conf->read_timeout, NGX_FUNC_LINE); //如果超时在该函数检测ngx_http_upstream_process_header
 
     if (c->read->ready) {
         ngx_http_upstream_process_header(r, u);
@@ -2315,7 +2315,7 @@ ngx_http_upstream_send_request(ngx_http_request_t *r, ngx_http_upstream_t *u,
     }
 }
 
-//脧貌潞贸露脣路垄脣脥脟毛脟贸碌脛碌梅脫脙鹿媒鲁脤ngx_http_upstream_send_request_body->ngx_output_chain->ngx_chain_writer
+//向后端发送请求的调用过程ngx_http_upstream_send_request_body->ngx_output_chain->ngx_chain_writer
 static ngx_int_t
 ngx_http_upstream_send_request_body(ngx_http_request_t *r,
     ngx_http_upstream_t *u, ngx_uint_t do_write)
@@ -2335,7 +2335,7 @@ ngx_http_upstream_send_request_body(ngx_http_request_t *r,
 
        if (!u->request_sent) {
            u->request_sent = 1;
-           out = u->request_bufs; //脠莽鹿没脢脟fastcgi脮芒脌茂脙忙脦陋脢碌录脢路垄脥霉潞贸露脣碌脛脢媒戮脻(掳眉脌篓fastcgi赂帽脢陆脥路虏驴+驴脥禄搂露脣掳眉脤氓碌脠)
+           out = u->request_bufs; //如果是fastcgi这里面为实际发往后端的数据(包括fastcgi格式头部+客户端包体等)
 
        } else {
            out = NULL;
@@ -2432,7 +2432,7 @@ ngx_http_upstream_send_request_body(ngx_http_request_t *r,
     return rc;
 }
 
-//ngx_http_upstream_send_request_handler脫脙禄搂脧貌潞贸露脣路垄脣脥掳眉脤氓脢卤拢卢脪禄麓脦路垄脣脥脙禄脥锚脥锚鲁脡拢卢脭脵麓脦鲁枚路垄epoll write碌脛脢卤潞貌碌梅脫脙
+//ngx_http_upstream_send_request_handler用户向后端发送包体时，一次发送没完完成，再次出发epoll write的时候调用
 static void
 ngx_http_upstream_send_request_handler(ngx_http_request_t *r,
     ngx_http_upstream_t *u)
@@ -2444,8 +2444,8 @@ ngx_http_upstream_send_request_handler(ngx_http_request_t *r,
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http upstream send request handler");
 
-    //卤铆脢戮脧貌脡脧脫脦路镁脦帽脝梅路垄脣脥碌脛脟毛脟贸脪脩戮颅鲁卢脢卤
-    if (c->write->timedout) { //赂脙露篓脢卤脝梅脭脷ngx_http_upstream_send_request脤铆录脫碌脛
+    //表示向上游服务器发送的请求已经超时
+    if (c->write->timedout) { //该定时器在ngx_http_upstream_send_request添加的
         ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_TIMEOUT);
         return;
     }
@@ -2458,8 +2458,8 @@ ngx_http_upstream_send_request_handler(ngx_http_request_t *r,
     }
 
 #endif
-    //卤铆脢戮脡脧脫脦路镁脦帽脝梅碌脛脧矛脫娄脨猫脪陋脰卤陆脫脳陋路垄赂酶驴脥禄搂露脣拢卢虏垄脟脪麓脣脢卤脪脩戮颅掳脩脧矛脫娄脥路路垄脣脥赂酶驴脥禄搂露脣脕脣
-    if (u->header_sent) { //露录脪脩戮颅脢脮碌陆潞贸露脣碌脛脢媒戮脻虏垄脟脪路垄脣脥赂酶驴脥禄搂露脣盲炉脌脌脝梅脕脣拢卢脣碌脙梅虏禄禄谩脭脵脧毛潞贸露脣脨麓脢媒戮脻拢卢
+    //表示上游服务器的响应需要直接转发给客户端，并且此时已经把响应头发送给客户端了
+    if (u->header_sent) { //都已经收到后端的数据并且发送给客户端浏览器了，说明不会再想后端写数据，
         u->write_event_handler = ngx_http_upstream_dummy_handler;
 
         (void) ngx_handle_write_event(c->write, 0, NGX_FUNC_LINE);
@@ -2492,15 +2492,15 @@ ngx_http_upstream_read_request_handler(ngx_http_request_t *r)
     ngx_http_upstream_send_request(r, u, 0);
 }
 
-//ngx_http_upstream_handler脰脨脰麓脨脨
+//ngx_http_upstream_handler中执行
 /*
-潞贸露脣路垄脣脥鹿媒脌麓碌脛脥路虏驴脨脨掳眉脤氓赂帽脢陆: 8脳脰陆脷fastcgi脥路虏驴脨脨+ 脢媒戮脻(脥路虏驴脨脨脨脜脧垄+ 驴脮脨脨 + 脢碌录脢脨猫脪陋路垄脣脥碌脛掳眉脤氓脛脷脠脻) + 脤卯鲁盲脳脰露脦
+后端发送过来的头部行包体格式: 8字节fastcgi头部行+ 数据(头部行信息+ 空行 + 实际需要发送的包体内容) + 填充字段
 */
 static void
 ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
-{//露脕脠隆FCGI脥路虏驴脢媒戮脻拢卢禄貌脮脽proxy脥路虏驴脢媒戮脻隆拢ngx_http_upstream_send_request路垄脣脥脥锚脢媒戮脻潞贸拢卢
-//禄谩碌梅脫脙脮芒脌茂拢卢禄貌脮脽脫脨驴脡脨麓脢脗录镁碌脛脢卤潞貌禄谩碌梅脫脙脮芒脌茂隆拢
-//ngx_http_upstream_connect潞炉脢媒脕卢陆脫fastcgi潞贸拢卢禄谩脡猫脰脙脮芒赂枚禄脴碌梅潞炉脢媒脦陋fcgi脕卢陆脫碌脛驴脡露脕脢脗录镁禄脴碌梅隆拢
+{//读取FCGI头部数据，或者proxy头部数据。ngx_http_upstream_send_request发送完数据后，
+//会调用这里，或者有可写事件的时候会调用这里。
+//ngx_http_upstream_connect函数连接fastcgi后，会设置这个回调函数为fcgi连接的可读事件回调。
     ssize_t            n;
     ngx_int_t          rc;
     ngx_connection_t  *c;
@@ -2512,8 +2512,8 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
     c->log->action = "reading response header from upstream";
 
-    if (c->read->timedout) {//露脕鲁卢脢卤脕脣拢卢脗脰脩炉脧脗脪禄赂枚隆拢 ngx_event_expire_timers鲁卢脢卤潞贸脳脽碌陆脮芒脌茂
-        //赂脙露篓脢卤脝梅脤铆录脫碌脴路陆脭脷ngx_http_upstream_send_request
+    if (c->read->timedout) {//读超时了，轮询下一个。 ngx_event_expire_timers超时后走到这里
+        //该定时器添加地方在ngx_http_upstream_send_request
         ngx_http_upstream_next(r, u, NGX_HTTP_UPSTREAM_FT_TIMEOUT);
         return;
     }
@@ -2523,9 +2523,9 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
         return;
     }
 
-    if (u->buffer.start == NULL) { //路脰脜盲脪禄驴茅禄潞麓忙拢卢脫脙脌麓麓忙路脜陆脫脢脺禄脴脌麓碌脛脢媒戮脻隆拢
+    if (u->buffer.start == NULL) { //分配一块缓存，用来存放接受回来的数据。
         u->buffer.start = ngx_palloc(r->pool, u->conf->buffer_size); 
-        //脥路虏驴脨脨虏驴路脰(脪虏戮脥脢脟碌脷脪禄赂枚fastcgi data卤锚脢露脨脜脧垄拢卢脌茂脙忙脪虏禄谩脨炉麓酶脪禄虏驴路脰脥酶脪鲁脢媒戮脻)碌脛fastcgi卤锚脢露脨脜脧垄驴陋卤脵碌脛驴脮录盲脫脙buffer_size脜盲脰脙脰赂露篓
+        //头部行部分(也就是第一个fastcgi data标识信息，里面也会携带一部分网页数据)的fastcgi标识信息开辟的空间用buffer_size配置指定
         if (u->buffer.start == NULL) {
             ngx_http_upstream_finalize_request(r, u,
                                                NGX_HTTP_INTERNAL_SERVER_ERROR);
@@ -2539,7 +2539,7 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
         u->buffer.tag = u->output.tag;
 
-        //鲁玫脢录禄炉headers_in麓忙路脜脥路虏驴脨脜脧垄拢卢潞贸露脣FCGI,proxy陆芒脦枚潞贸碌脛HTTP脥路虏驴陆芦路脜脠毛脮芒脌茂
+        //初始化headers_in存放头部信息，后端FCGI,proxy解析后的HTTP头部将放入这里
         if (ngx_list_init(&u->headers_in.headers, r->pool, 8,
                           sizeof(ngx_table_elt_t))
             != NGX_OK)
@@ -2554,7 +2554,7 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
         pVpVZ"
         KEY: /test.php
 
-        //脧脗脙忙脢脟潞贸露脣脢碌录脢路碌禄脴碌脛脛脷脠脻拢卢脡脧脙忙碌脛脢脟脭陇脕么碌脛脥路虏驴
+        //下面是后端实际返回的内容，上面的是预留的头部
         IX-Powered-By: PHP/5.2.13
         Content-type: text/html
 
@@ -2562,7 +2562,7 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
         <Head> 
         <title>Your page Subject and domain name</title>
           */
-        if (r->cache) { //脳垄脪芒脮芒脌茂脤酶鹿媒脕脣脭陇脕么碌脛脥路虏驴脛脷麓忙拢卢脫脙脫脷麓忙麓垄cache脨麓脠毛脦脛录镁脢卤潞貌碌脛脥路虏驴虏驴路脰拢卢录没
+        if (r->cache) { //注意这里跳过了预留的头部内存，用于存储cache写入文件时候的头部部分，见
             u->buffer.pos += r->cache->header_start;
             u->buffer.last = u->buffer.pos;
         }
@@ -2570,10 +2570,10 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
     }
 
     for ( ;; ) {
-        //recv 脦陋 ngx_unix_recv拢卢露脕脠隆脢媒戮脻路脜脭脷u->buffer.last碌脛脦禄脰脙拢卢路碌禄脴露脕碌陆碌脛麓贸脨隆隆拢
+        //recv 为 ngx_unix_recv，读取数据放在u->buffer.last的位置，返回读到的大小。
         n = c->recv(c, u->buffer.last, u->buffer.end - u->buffer.last);
 
-        if (n == NGX_AGAIN) { //脛脷潞脣禄潞鲁氓脟酶脪脩戮颅脙禄脢媒戮脻脕脣
+        if (n == NGX_AGAIN) { //内核缓冲区已经没数据了
 #if 0 
             ngx_add_timer(rev, u->read_timeout);
 #endif
@@ -2605,12 +2605,12 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
         u->peer.cached = 0;
 #endif
         //ngx_http_xxx_process_header ngx_http_proxy_process_header
-        rc = u->process_header(r);//ngx_http_fastcgi_process_header碌脠拢卢陆酶脨脨脢媒戮脻麓娄脌铆拢卢卤脠脠莽潞贸露脣路碌禄脴碌脛脢媒戮脻脥路虏驴陆芒脦枚拢卢body露脕脠隆碌脠隆拢
+        rc = u->process_header(r);//ngx_http_fastcgi_process_header等，进行数据处理，比如后端返回的数据头部解析，body读取等。
 
         if (rc == NGX_AGAIN) {
             ngx_log_debugall(c->log, 0,  " ngx_http_upstream_process_header u->process_header() return NGX_AGAIN");
 
-            if (u->buffer.last == u->buffer.end) { //路脰脜盲碌脛脫脙脌麓麓忙麓垄fastcgi STDOUT脥路虏驴脨脨掳眉脤氓碌脛buf脪脩戮颅脫脙脥锚脕脣脥路虏驴脨脨露录禄鹿脙禄脫脨陆芒脦枚脥锚鲁脡拢卢
+            if (u->buffer.last == u->buffer.end) { //分配的用来存储fastcgi STDOUT头部行包体的buf已经用完了头部行都还没有解析完成，
                 ngx_log_error(NGX_LOG_ERR, c->log, 0,
                               "upstream sent too big header");
 
@@ -2651,23 +2651,23 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
         }
     }
 
-    //碌陆脮芒脌茂拢卢FCGI碌脠赂帽脢陆碌脛脢媒戮脻脪脩戮颅陆芒脦枚脦陋卤锚脳录HTTP碌脛卤铆脢戮脨脦脢陆脕脣(鲁媒脕脣BODY)拢卢脣霉脪脭驴脡脪脭陆酶脨脨upstream碌脛process_headers隆拢
-	//脡脧脙忙碌脛 u->process_header(r)脪脩戮颅陆酶脨脨FCGI碌脠赂帽脢陆碌脛陆芒脦枚脕脣隆拢脧脗脙忙陆芦脥路虏驴脢媒戮脻驴陆卤麓碌陆headers_out.headers脢媒脳茅脰脨隆拢
+    //到这里，FCGI等格式的数据已经解析为标准HTTP的表示形式了(除了BODY)，所以可以进行upstream的process_headers。
+    //上面的 u->process_header(r)已经进行FCGI等格式的解析了。下面将头部数据拷贝到headers_out.headers数组中。
     if (ngx_http_upstream_process_headers(r, u) != NGX_OK) {
         return;
     }
     
-    if (!r->subrequest_in_memory) {//脠莽鹿没脙禄脫脨脳脫脟毛脟贸脕脣拢卢脛脟戮脥脰卤陆脫路垄脣脥脧矛脫娄赂酶驴脥禄搂露脣掳脡隆拢
-        //buffering路陆脢陆潞脥路脟buffering路陆脢陆脭脷潞炉脢媒ngx_http_upstream_send_response路脰虏忙
-        ngx_http_upstream_send_response(r, u);//赂酶驴脥禄搂露脣路垄脣脥脧矛脫娄拢卢脌茂脙忙禄谩麓娄脌铆header,body路脰驴陋路垄脣脥碌脛脟茅驴枚碌脛
+    if (!r->subrequest_in_memory) {//如果没有子请求了，那就直接发送响应给客户端吧。
+        //buffering方式和非buffering方式在函数ngx_http_upstream_send_response分叉
+        ngx_http_upstream_send_response(r, u);//给客户端发送响应，里面会处理header,body分开发送的情况的
         return;
     }
 
     /* subrequest content in memory */
-    //脳脫脟毛脟贸拢卢虏垄脟脪潞贸露脣脢媒戮脻脨猫脪陋卤拢麓忙碌陆脛脷麓忙脭脷
+    //子请求，并且后端数据需要保存到内存在
 
     
-    //脳垄脪芒脧脗脙忙脰禄脢脟掳脩潞贸露脣脢媒戮脻麓忙碌陆buf脰脨拢卢碌芦脢脟脙禄脫脨路垄脣脥碌陆驴脥禄搂露脣拢卢脢碌录脢路垄脣脥脪禄掳茫脢脟脫脡ngx_http_finalize_request->ngx_http_set_write_handler脢碌脧脰
+    //注意下面只是把后端数据存到buf中，但是没有发送到客户端，实际发送一般是由ngx_http_finalize_request->ngx_http_set_write_handler实现
     
     if (u->input_filter == NULL) {
         u->input_filter_init = ngx_http_upstream_non_buffered_filter_init;
@@ -2698,7 +2698,7 @@ ngx_http_upstream_process_header(ngx_http_request_t *r, ngx_http_upstream_t *u)
         return;
     }
 
-    u->read_event_handler = ngx_http_upstream_process_body_in_memory;//脡猫脰脙body虏驴路脰碌脛露脕脢脗录镁禄脴碌梅隆拢
+    u->read_event_handler = ngx_http_upstream_process_body_in_memory;//设置body部分的读事件回调。
 
     ngx_http_upstream_process_body_in_memory(r, u);
 }
@@ -2870,7 +2870,7 @@ ngx_http_upstream_intercept_errors(ngx_http_request_t *r,
     return NGX_DECLINED;
 }
 
-//录矛虏茅潞脥c->fd碌脛tcp脕卢陆脫脢脟路帽脫脨脪矛鲁拢
+//检查和c->fd的tcp连接是否有异常
 static ngx_int_t
 ngx_http_upstream_test_connect(ngx_connection_t *c)
 {
@@ -2922,9 +2922,9 @@ ngx_http_upstream_test_connect(ngx_connection_t *c)
 }
 
 /*
-陆芒脦枚脟毛脟贸碌脛脥路虏驴脳脰露脦隆拢脙驴脨脨HEADER禄脴碌梅脝盲copy_handler拢卢脠禄潞贸驴陆卤麓脪禄脧脗脳麓脤卢脗毛碌脠隆拢驴陆卤麓脥路虏驴脳脰露脦碌陆headers_out
-*/ //ngx_http_upstream_process_header潞脥ngx_http_upstream_process_headers潞脺脧帽脜露拢卢潞炉脢媒脙没拢卢脳垄脪芒
-static ngx_int_t //掳脩麓脫潞贸露脣路碌禄脴鹿媒脌麓碌脛脥路虏驴脨脨脨脜脧垄驴陆卤麓碌陆r->headers_out脰脨拢卢脪脭卤赂脥霉驴脥禄搂露脣路垄脣脥脫脙
+解析请求的头部字段。每行HEADER回调其copy_handler，然后拷贝一下状态码等。拷贝头部字段到headers_out
+*/ //ngx_http_upstream_process_header和ngx_http_upstream_process_headers很像哦，函数名，注意
+static ngx_int_t //把从后端返回过来的头部行信息拷贝到r->headers_out中，以备往客户端发送用
 ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u) 
 {
     ngx_str_t                       uri, args;
@@ -2938,25 +2938,25 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
     
     if (u->headers_in.x_accel_redirect
         && !(u->conf->ignore_headers & NGX_HTTP_UPSTREAM_IGN_XA_REDIRECT))
-    {//脠莽鹿没脥路虏驴脰脨脢鹿脫脙脕脣X-Accel-Redirect脤脴脨脭拢卢脪虏戮脥脢脟脧脗脭脴脦脛录镁碌脛脤脴脨脭拢卢脭貌脭脷脮芒脌茂陆酶脨脨脦脛录镁脧脗脭脴隆拢拢卢脰脴露篓脧貌隆拢
-    /*nginx X-Accel-Redirect脢碌脧脰脦脛录镁脧脗脭脴脠篓脧脼驴脴脰脝 
-    露脭脦脛录镁脧脗脭脴碌脛脠篓脧脼陆酶脨脨戮芦脠路驴脴脰脝脭脷潞脺露脿碌脴路陆露录脨猫脪陋拢卢脌媒脠莽脫脨鲁楼碌脛脧脗脭脴路镁脦帽隆垄脥酶脗莽脫虏脜脤隆垄赂枚脠脣脧脿虏谩隆垄路脌脰鹿卤戮脮戮脛脷脠脻卤禄脥芒脮戮碌脕脕麓碌脠
-    虏陆脰猫0拢卢client脟毛脟贸http://downloaddomain.com/download/my.iso拢卢麓脣脟毛脟贸卤禄CGI鲁脤脨貌陆芒脦枚拢篓露脭脫脷 nginx脫娄赂脙脢脟fastcgi拢漏隆拢
-    虏陆脰猫1拢卢CGI鲁脤脨貌赂霉戮脻路脙脦脢脮脽碌脛脡铆路脻潞脥脣霉脟毛脟贸碌脛脳脢脭麓脝盲脢脟路帽脫脨脧脗脭脴脠篓脧脼脌麓脜脨露篓脢脟路帽脫脨麓貌驴陋碌脛脠篓脧脼隆拢脠莽鹿没脫脨拢卢脛脟脙麓赂霉戮脻麓脣脟毛脟贸碌脙碌陆露脭脫娄脦脛录镁碌脛麓脜脜脤麓忙路脜脗路戮露拢卢脌媒脠莽脢脟 /var/data/my.iso隆拢
-        脛脟脙麓鲁脤脨貌路碌禄脴脢卤脭脷HTTP header录脫脠毛X-Accel-Redirect: /protectfile/data/my.iso拢卢虏垄录脫脡脧head Content-Type:application/octet-stream隆拢
-    虏陆脰猫2拢卢nginx碌脙碌陆cgi鲁脤脨貌碌脛禄脴脫娄潞贸路垄脧脰麓酶脫脨X-Accel-Redirect碌脛header拢卢脛脟脙麓赂霉戮脻脮芒赂枚脥路录脟脗录碌脛脗路戮露脨脜脧垄麓貌驴陋麓脜脜脤脦脛录镁隆拢
-    虏陆脰猫3拢卢nginx掳脩麓貌驴陋脦脛录镁碌脛脛脷脠脻路碌禄脴赂酶client露脣隆拢
-    脮芒脩霉脣霉脫脨碌脛脠篓脧脼录矛虏茅露录驴脡脪脭脭脷虏陆脰猫1脛脷脥锚鲁脡拢卢露酶脟脪cgi路碌禄脴麓酶X-Accel-Redirect碌脛脥路潞贸拢卢脝盲脰麓脨脨脪脩戮颅脰脮脰鹿拢卢脢拢脧脗碌脛麓芦脢盲脦脛录镁碌脛鹿陇脳梅脫脡nginx 脌麓陆脫鹿脺拢卢
-        脥卢脢卤X-Accel-Redirect脥路碌脛脨脜脧垄卤禄nginx脡戮鲁媒拢卢脪虏脪镁虏脴脕脣脦脛录镁脢碌录脢麓忙麓垄脛驴脗录拢卢虏垄脟脪脫脡脫脷nginx脭脷麓貌驴陋戮虏脤卢脦脛录镁脡脧脢鹿脫脙脕脣 sendfile(2)拢卢脝盲IO脨搂脗脢路脟鲁拢赂脽隆拢
+    {//如果头部中使用了X-Accel-Redirect特性，也就是下载文件的特性，则在这里进行文件下载。，重定向。
+    /*nginx X-Accel-Redirect实现文件下载权限控制 
+    对文件下载的权限进行精确控制在很多地方都需要，例如有偿的下载服务、网络硬盘、个人相册、防止本站内容被外站盗链等
+    步骤0，client请求http://downloaddomain.com/download/my.iso，此请求被CGI程序解析（对于 nginx应该是fastcgi）。
+    步骤1，CGI程序根据访问者的身份和所请求的资源其是否有下载权限来判定是否有打开的权限。如果有，那么根据此请求得到对应文件的磁盘存放路径，例如是 /var/data/my.iso。
+        那么程序返回时在HTTP header加入X-Accel-Redirect: /protectfile/data/my.iso，并加上head Content-Type:application/octet-stream。
+    步骤2，nginx得到cgi程序的回应后发现带有X-Accel-Redirect的header，那么根据这个头记录的路径信息打开磁盘文件。
+    步骤3，nginx把打开文件的内容返回给client端。
+    这样所有的权限检查都可以在步骤1内完成，而且cgi返回带X-Accel-Redirect的头后，其执行已经终止，剩下的传输文件的工作由nginx 来接管，
+        同时X-Accel-Redirect头的信息被nginx删除，也隐藏了文件实际存储目录，并且由于nginx在打开静态文件上使用了 sendfile(2)，其IO效率非常高。
     */
         ngx_http_upstream_finalize_request(r, u, NGX_DECLINED);
 
-        part = &u->headers_in.headers.part; //潞贸露脣路镁脦帽脝梅脫娄麓冒碌脛脥路虏驴脨脨脨脜脧垄脠芦虏驴脭脷赂脙headers脕麓卤铆脢媒脳茅脰脨
+        part = &u->headers_in.headers.part; //后端服务器应答的头部行信息全部在该headers链表数组中
         h = part->elts;
 
         for (i = 0; /* void */; i++) {
 
-            if (i >= part->nelts) { //headers脡脧脙忙碌脛脧脗脪禄赂枚脕麓卤铆
+            if (i >= part->nelts) { //headers上面的下一个链表
                 if (part->next == NULL) {
                     break;
                 }
@@ -2970,7 +2970,7 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
                                h[i].lowcase_key, h[i].key.len);  
 
             if (hh && hh->redirect) { 
-            //脠莽鹿没潞贸露脣路镁脦帽脝梅脫脨路碌禄脴ngx_http_upstream_headers_in脰脨碌脛脥路虏驴脨脨脳脰露脦拢卢脠莽鹿没赂脙脢媒脳茅脰脨碌脛鲁脡脭卤redirect脦陋1拢卢脭貌脰麓脨脨鲁脡脭卤碌脛露脭脫娄碌脛copy_handler
+            //如果后端服务器有返回ngx_http_upstream_headers_in中的头部行字段，如果该数组中的成员redirect为1，则执行成员的对应的copy_handler
                 if (hh->copy_handler(r, &h[i], hh->conf) != NGX_OK) {
                     ngx_http_finalize_request(r,
                                               NGX_HTTP_INTERNAL_SERVER_ERROR);
@@ -2979,7 +2979,7 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
             }
         }
 
-        uri = u->headers_in.x_accel_redirect->value; //脨猫脪陋脛脷虏驴脰脴露篓脧貌碌脛脨脗碌脛uri拢卢脥篓鹿媒潞贸脙忙碌脛ngx_http_internal_redirect麓脫脨脗脳脽13 phase陆脳露脦脕梅鲁脤
+        uri = u->headers_in.x_accel_redirect->value; //需要内部重定向的新的uri，通过后面的ngx_http_internal_redirect从新走13 phase阶段流程
 
         if (uri.data[0] == '@') {
             ngx_http_named_location(r, &uri);
@@ -2997,7 +2997,7 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
                 r->method = NGX_HTTP_GET;
             }
 
-            ngx_http_internal_redirect(r, &uri, &args);//脢鹿脫脙脛脷虏驴脰脴露篓脧貌拢卢脟脡脙卯碌脛脧脗脭脴隆拢脌茂脙忙脫脰禄谩脳脽碌陆赂梅脰脰脟毛脟贸麓娄脌铆陆脳露脦隆拢
+            ngx_http_internal_redirect(r, &uri, &args);//使用内部重定向，巧妙的下载。里面又会走到各种请求处理阶段。
         }
 
         ngx_http_finalize_request(r, NGX_DONE);
@@ -3020,7 +3020,7 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
         }
 
         if (ngx_hash_find(&u->conf->hide_headers_hash, h[i].hash,
-                          h[i].lowcase_key, h[i].key.len)) //脮芒脨漏脥路虏驴虏禄脨猫脪陋路垄脣脥赂酶驴脥禄搂露脣拢卢脪镁虏脴
+                          h[i].lowcase_key, h[i].key.len)) //这些头部不需要发送给客户端，隐藏
         {
             continue;
         }
@@ -3028,8 +3028,8 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
         hh = ngx_hash_find(&umcf->headers_in_hash, h[i].hash,
                            h[i].lowcase_key, h[i].key.len);
 
-        if (hh) {//脪禄赂枚赂枚驴陆卤麓碌陆脟毛脟贸碌脛headers_out脌茂脙忙
-            if (hh->copy_handler(r, &h[i], hh->conf) != NGX_OK) { //麓脫u->headers_in.headers赂麓脰脝碌陆r->headers_out.headers脫脙脫脷路垄脣脥
+        if (hh) {//一个个拷贝到请求的headers_out里面
+            if (hh->copy_handler(r, &h[i], hh->conf) != NGX_OK) { //从u->headers_in.headers复制到r->headers_out.headers用于发送
                 ngx_http_upstream_finalize_request(r, u,
                                                NGX_HTTP_INTERNAL_SERVER_ERROR);
                 return NGX_DONE;
@@ -3038,7 +3038,7 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
             continue; 
         }
 
-        //脠莽鹿没脙禄脫脨脳垄虏谩戮盲卤煤(脭脷ngx_http_upstream_headers_in脮脪虏禄碌陆赂脙鲁脡脭卤)拢卢驴陆卤麓潞贸露脣路镁脦帽脝梅路碌禄脴碌脛脪禄脨脨脪禄脨脨碌脛脥路虏驴脨脜脧垄(u->headers_in.headers脰脨碌脛脥路虏驴脨脨赂鲁脰碌赂酶r->headers_out.headers)
+        //如果没有注册句柄(在ngx_http_upstream_headers_in找不到该成员)，拷贝后端服务器返回的一行一行的头部信息(u->headers_in.headers中的头部行赋值给r->headers_out.headers)
         if (ngx_http_upstream_copy_header_line(r, &h[i], 0) != NGX_OK) {
             ngx_http_upstream_finalize_request(r, u,
                                                NGX_HTTP_INTERNAL_SERVER_ERROR);
@@ -3054,7 +3054,7 @@ ngx_http_upstream_process_headers(ngx_http_request_t *r, ngx_http_upstream_t *u)
         r->headers_out.date->hash = 0;
     }
 
-    //驴陆卤麓脳麓脤卢脨脨拢卢脪貌脦陋脮芒赂枚虏禄脢脟麓忙脭脷headers_in脌茂脙忙碌脛隆拢
+    //拷贝状态行，因为这个不是存在headers_in里面的。
     r->headers_out.status = u->headers_in.status_n;
     r->headers_out.status_line = u->headers_in.status_line;
 
@@ -3095,7 +3095,7 @@ ngx_http_upstream_process_body_in_memory(ngx_http_request_t *r,
     ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
                    "http upstream process body on memory");
 
-    if (rev->timedout) { //脭脷路垄脣脥脟毛脟贸碌陆潞贸露脣碌脛脢卤潞貌拢卢脦脪脙脟脨猫脪陋碌脠麓媒露脭路陆脫娄麓冒拢卢脪貌麓脣脡猫脰脙脕脣露脕鲁卢脢卤露篓脢卤脝梅拢卢录没ngx_http_upstream_send_request
+    if (rev->timedout) { //在发送请求到后端的时候，我们需要等待对方应答，因此设置了读超时定时器，见ngx_http_upstream_send_request
         ngx_connection_error(c, NGX_ETIMEDOUT, "upstream timed out");
         ngx_http_upstream_finalize_request(r, u, NGX_HTTP_GATEWAY_TIME_OUT);
         return;
@@ -3155,7 +3155,7 @@ ngx_http_upstream_process_body_in_memory(ngx_http_request_t *r,
     }
 }
 
-//路垄脣脥潞贸露脣路碌禄脴禄脴脌麓碌脛脢媒戮脻赂酶驴脥禄搂露脣隆拢脌茂脙忙禄谩麓娄脌铆header,body路脰驴陋路垄脣脥碌脛脟茅驴枚碌脛 
+//发送后端返回回来的数据给客户端。里面会处理header,body分开发送的情况的 
 static void 
 ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
 {
@@ -3168,14 +3168,14 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
     int flag;
     time_t  now, valid;
 
-    rc = ngx_http_send_header(r);//脧脠路垄header拢卢脭脵路垄body //碌梅脫脙脙驴脪禄赂枚filter鹿媒脗脣拢卢麓娄脌铆脥路虏驴脢媒戮脻隆拢脳卯潞贸陆芦脢媒戮脻路垄脣脥赂酶驴脥禄搂露脣隆拢碌梅脫脙ngx_http_top_header_filter
+    rc = ngx_http_send_header(r);//先发header，再发body //调用每一个filter过滤，处理头部数据。最后将数据发送给客户端。调用ngx_http_top_header_filter
 
     if (rc == NGX_ERROR || rc > NGX_OK || r->post_action) {
         ngx_http_upstream_finalize_request(r, u, rc);
         return;
     }
 
-    u->header_sent = 1;//卤锚录脟脪脩戮颅路垄脣脥脕脣脥路虏驴脳脰露脦拢卢脰脕脡脵脢脟脪脩戮颅鹿脪脭脴鲁枚脠楼拢卢戮颅鹿媒脕脣filter脕脣隆拢
+    u->header_sent = 1;//标记已经发送了头部字段，至少是已经挂载出去，经过了filter了。
 
     if (u->upgrade) {
         ngx_http_upstream_upgrade(r, u);
@@ -3184,55 +3184,55 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
     c = r->connection;
 
-    if (r->header_only) {//脠莽鹿没脰禄脨猫脪陋路垄脣脥脥路虏驴脢媒戮脻拢卢卤脠脠莽驴脥禄搂露脣脫脙curl -I 路脙脦脢碌脛隆拢路碌禄脴204脳麓脤卢脗毛录麓驴脡隆拢
+    if (r->header_only) {//如果只需要发送头部数据，比如客户端用curl -I 访问的。返回204状态码即可。
 
-        if (!u->buffering) { //脜盲脰脙虏禄脨猫脪陋禄潞麓忙掳眉脤氓拢卢禄貌脮脽潞贸露脣脪陋脟贸虏禄脜盲脰脙禄潞麓忙掳眉脤氓拢卢脰卤陆脫陆谩脢酶
+        if (!u->buffering) { //配置不需要缓存包体，或者后端要求不配置缓存包体，直接结束
             ngx_http_upstream_finalize_request(r, u, rc);
             return;
         }
 
-        if (!u->cacheable && !u->store) { //脠莽鹿没露篓脪氓脕脣#if (NGX_HTTP_CACHE)脭貌驴脡脛脺脰脙1
+        if (!u->cacheable && !u->store) { //如果定义了#if (NGX_HTTP_CACHE)则可能置1
             ngx_http_upstream_finalize_request(r, u, rc);
             return;
         }
 
-        u->pipe->downstream_error = 1; //脙眉脙没驴脥禄搂露脣脰禄脟毛脟贸脥路虏驴脨脨拢卢碌芦脢脟脡脧脫脦脠赂脜盲脰脙禄貌脮脽脪陋脟贸禄潞麓忙禄貌脮脽麓忙麓垄掳眉脤氓
+        u->pipe->downstream_error = 1; //命名客户端只请求头部行，但是上游雀配置或者要求缓存或者存储包体
     }
 
-    if (r->request_body && r->request_body->temp_file) { //驴脥禄搂露脣路垄脣脥鹿媒脌麓碌脛掳眉脤氓麓忙麓垄脭脷脕脵脢卤脦脛录镁脰脨拢卢脭貌脨猫脪陋掳脩麓忙麓垄脕脵脢卤脦脛录镁脡戮鲁媒
+    if (r->request_body && r->request_body->temp_file) { //客户端发送过来的包体存储在临时文件中，则需要把存储临时文件删除
         ngx_pool_run_cleanup_file(r->pool, r->request_body->temp_file->file.fd); 
-        //脰庐脟掳脕脵脢卤脦脛录镁脛脷脠脻脪脩戮颅虏禄脨猫脪陋脕脣拢卢脪貌脦陋脭脷ngx_http_fastcgi_create_request(ngx_http_xxx_create_request)脰脨脪脩戮颅掳脩脕脵脢卤脦脛录镁脰脨碌脛脛脷脠脻
-        //赂鲁脰碌赂酶u->request_bufs虏垄脥篓鹿媒路垄脣脥碌陆脕脣潞贸露脣路镁脦帽脝梅拢卢脧脰脭脷脨猫脪陋路垄脥霉驴脥禄搂露脣碌脛脛脷脠脻脦陋脡脧脫脦脫娄麓冒禄脴脌麓碌脛掳眉脤氓拢卢脪貌麓脣麓脣脕脵脢卤脦脛录镁脛脷脠脻脪脩戮颅脙禄脫脙脕脣
+        //之前临时文件内容已经不需要了，因为在ngx_http_fastcgi_create_request(ngx_http_xxx_create_request)中已经把临时文件中的内容
+        //赋值给u->request_bufs并通过发送到了后端服务器，现在需要发往客户端的内容为上游应答回来的包体，因此此临时文件内容已经没用了
         r->request_body->temp_file->file.fd = NGX_INVALID_FILE;
     }
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
     /*
-     脠莽鹿没驴陋脝么禄潞鲁氓拢卢脛脟脙麓Nginx陆芦戮隆驴脡脛脺露脿碌脴露脕脠隆潞贸露脣路镁脦帽脝梅碌脛脧矛脫娄脢媒戮脻拢卢碌脠麓茂碌陆脪禄露篓脕驴拢篓卤脠脠莽buffer脗煤拢漏脭脵麓芦脣脥赂酶脳卯脰脮驴脥禄搂露脣隆拢脠莽鹿没鹿脴卤脮拢卢
-     脛脟脙麓Nginx露脭脢媒戮脻碌脛脰脨脳陋戮脥脢脟脪禄赂枚脥卢虏陆碌脛鹿媒鲁脤拢卢录麓麓脫潞贸露脣路镁脦帽脝梅陆脫脢脮碌陆脧矛脫娄脢媒戮脻戮脥脕垄录麓陆芦脝盲路垄脣脥赂酶驴脥禄搂露脣隆拢
+     如果开启缓冲，那么Nginx将尽可能多地读取后端服务器的响应数据，等达到一定量（比如buffer满）再传送给最终客户端。如果关闭，
+     那么Nginx对数据的中转就是一个同步的过程，即从后端服务器接收到响应数据就立即将其发送给客户端。
      */
     flag = u->buffering;
     ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0, "ngx_http_upstream_send_response, buffering flag:%d", flag);
     if (!u->buffering) { 
-    //buffering脦陋1拢卢卤铆脢戮脡脧脫脦脌麓碌脛掳眉脤氓脧脠禄潞麓忙脡脧脫脦路垄脣脥脌麓碌脛掳眉脤氓拢卢脠禄潞贸脭脷路垄脣脥碌陆脧脗脫脦拢卢脠莽鹿没赂脙脰碌脦陋0拢卢脭貌陆脫脢脮露脿脡脵脡脧脫脦掳眉脤氓戮脥脧貌脧脗脫脦脳陋路垄露脿脡脵掳眉脤氓
+    //buffering为1，表示上游来的包体先缓存上游发送来的包体，然后在发送到下游，如果该值为0，则接收多少上游包体就向下游转发多少包体
 
-        if (u->input_filter == NULL) { //脠莽鹿没input_filter脦陋驴脮拢卢脭貌脡猫脰脙脛卢脠脧碌脛filter拢卢脠禄潞贸脳录卤赂路垄脣脥脢媒戮脻碌陆驴脥禄搂露脣隆拢脠禄潞贸脢脭脳脜露脕露脕FCGI
+        if (u->input_filter == NULL) { //如果input_filter为空，则设置默认的filter，然后准备发送数据到客户端。然后试着读读FCGI
             u->input_filter_init = ngx_http_upstream_non_buffered_filter_init;
-            //ngx_http_upstream_non_buffered_filter陆芦u->buffer.last - u->buffer.pos脰庐录盲碌脛脢媒戮脻路脜碌陆u->out_bufs路垄脣脥禄潞鲁氓脠楼脕麓卤铆脌茂脙忙隆拢
-            //赂霉戮脻戮脽脤氓碌脛碌陆脡脧脫脦脳陋路垄碌脛路陆脢陆拢卢脩隆脭帽脢鹿脫脙fastcgi memcached碌脠拢卢ngx_http_xxx_filter
-            u->input_filter = ngx_http_upstream_non_buffered_filter; //脪禄掳茫戮脥脡猫脰脙脦陋脮芒赂枚脛卢脠脧碌脛拢卢memcache脦陋ngx_http_memcached_filter
+            //ngx_http_upstream_non_buffered_filter将u->buffer.last - u->buffer.pos之间的数据放到u->out_bufs发送缓冲去链表里面。
+            //根据具体的到上游转发的方式，选择使用fastcgi memcached等，ngx_http_xxx_filter
+            u->input_filter = ngx_http_upstream_non_buffered_filter; //一般就设置为这个默认的，memcache为ngx_http_memcached_filter
             u->input_filter_ctx = r;
         }
 
-        //脡猫脰脙upstream碌脛露脕脢脗录镁禄脴碌梅拢卢脡猫脰脙驴脥禄搂露脣脕卢陆脫碌脛脨麓脢脗录镁禄脴碌梅隆拢
+        //设置upstream的读事件回调，设置客户端连接的写事件回调。
         u->read_event_handler = ngx_http_upstream_process_non_buffered_upstream;
         r->write_event_handler =
-                             ngx_http_upstream_process_non_buffered_downstream;//碌梅脫脙鹿媒脗脣脛拢驴茅脪禄赂枚赂枚鹿媒脗脣body拢卢脳卯脰脮路垄脣脥鲁枚脠楼隆拢
+                             ngx_http_upstream_process_non_buffered_downstream;//调用过滤模块一个个过滤body，最终发送出去。
 
         r->limit_rate = 0;
-        //ngx_http_XXX_input_filter_init(脠莽ngx_http_fastcgi_input_filter_init ngx_http_proxy_input_filter_init ngx_http_proxy_input_filter_init)  
-        //脰禄脫脨memcached禄谩脰麓脨脨ngx_http_memcached_filter_init拢卢脝盲脣没路陆脢陆脢虏脙麓脪虏脙禄脳枚 
+        //ngx_http_XXX_input_filter_init(如ngx_http_fastcgi_input_filter_init ngx_http_proxy_input_filter_init ngx_http_proxy_input_filter_init)  
+        //只有memcached会执行ngx_http_memcached_filter_init，其他方式什么也没做 
         if (u->input_filter_init(u->input_filter_ctx) == NGX_ERROR) {
             ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
             return;
@@ -3258,18 +3258,18 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
         n = u->buffer.last - u->buffer.pos;
 
         /* 
-          虏禄脢脟禄鹿脙禄陆脫脢脮掳眉脤氓脗茂拢卢脦陋脢虏脙麓戮脥驴陋脢录路垄脣脥脕脣脛脴驴
-              脮芒脢脟脪貌脦陋脭脷脟掳脙忙碌脛ngx_http_upstream_process_header陆脫脢脮fastcgi脥路虏驴脨脨卤锚脢露掳眉脤氓麓娄脌铆碌脛脢卤潞貌拢卢脫脨驴脡脛脺禄谩掳脩脪禄虏驴路脰fastcgi掳眉脤氓卤锚脢露脪虏脢脮鹿媒脕脣拢卢
-          脪貌麓脣脨猫脪陋麓娄脌铆
+          不是还没接收包体嘛，为什么就开始发送了呢�
+              这是因为在前面的ngx_http_upstream_process_header接收fastcgi头部行标识包体处理的时候，有可能会把一部分fastcgi包体标识也收过了，
+          因此需要处理
           */
         
-        if (n) {//碌脙碌陆陆芦脪陋路垄脣脥碌脛脢媒戮脻碌脛麓贸脨隆拢卢脙驴麓脦脫脨露脿脡脵戮脥路垄脣脥露脿脡脵隆拢虏禄碌脠麓媒upstream脕脣  脪貌脦陋脮芒脢脟虏禄禄潞麓忙路陆脢陆路垄脣脥掳眉脤氓碌陆驴脥禄搂露脣
+        if (n) {//得到将要发送的数据的大小，每次有多少就发送多少。不等待upstream了  因为这是不缓存方式发送包体到客户端
             u->buffer.last = u->buffer.pos;
 
-            u->state->response_length += n;//脥鲁录脝脟毛脟贸碌脛路碌禄脴掳眉脤氓脢媒戮脻(虏禄掳眉脌篓脟毛脟贸脨脨)鲁陇露脠隆拢
+            u->state->response_length += n;//统计请求的返回包体数据(不包括请求行)长度。
 
-            //脧脗脙忙input_filter脰禄脢脟录貌碌楼碌脛驴陆卤麓buffer脡脧脙忙碌脛脢媒戮脻脳脺鹿虏n鲁陇露脠碌脛拢卢碌陆u->out_bufs脌茂脙忙脠楼拢卢脪脭麓媒路垄脣脥隆拢
-            //ngx_http_xxx_non_buffered_filter(脠莽ngx_http_fastcgi_non_buffered_filter)
+            //下面input_filter只是简单的拷贝buffer上面的数据总共n长度的，到u->out_bufs里面去，以待发送。
+            //ngx_http_xxx_non_buffered_filter(如ngx_http_fastcgi_non_buffered_filter)
             if (u->input_filter(u->input_filter_ctx, n) == NGX_ERROR) {
                 ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
                 return;
@@ -3291,14 +3291,14 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
             }
         }
 
-        return; //脮芒脌茂禄谩路碌禄脴禄脴脠楼
+        return; //这里会返回回去
     }
 
     /* TODO: preallocate event_pipe bufs, look "Content-Length" */
 
 #if (NGX_HTTP_CACHE)
 
-    /* 脳垄脪芒脮芒脢卤潞貌禄鹿脢脟脭脷露脕脠隆碌脷脪禄赂枚脥路虏驴脨脨碌脛鹿媒鲁脤脰脨(驴脡脛脺禄谩脨炉麓酶虏驴路脰禄貌脮脽脠芦虏驴掳眉脤氓脢媒戮脻脭脷脌茂脙忙)  */
+    /* 注意这时候还是在读取第一个头部行的过程中(可能会携带部分或者全部包体数据在里面)  */
 
     if (r->cache && r->cache->file.fd != NGX_INVALID_FILE) {
         ngx_pool_run_cleanup_file(r->pool, r->cache->file.fd);
@@ -3306,8 +3306,8 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
     }
 
     /*   
-     fastcgi_no_cache 脜盲脰脙脰赂脕卯驴脡脪脭脢鹿 upstream 脛拢驴茅虏禄脭脵禄潞麓忙脗煤脳茫录脠露篓脤玫录镁碌脛脟毛脟贸碌脙 
-     碌陆碌脛脧矛脫娄隆拢脫脡脡脧脙忙 ngx_http_test_predicates 潞炉脢媒录掳脧脿鹿脴麓煤脗毛脥锚鲁脡隆拢 
+     fastcgi_no_cache 配置指令可以使 upstream 模块不再缓存满足既定条件的请求得 
+     到的响应。由上面 ngx_http_test_predicates 函数及相关代码完成。 
      */
     switch (ngx_http_test_predicates(r, u->conf->no_cache)) {
 
@@ -3320,12 +3320,12 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
         break;
 
     default: /* NGX_OK */
-        //脭脷驴脥禄搂露脣脟毛脟贸潞贸露脣碌脛脢卤潞貌拢卢脠莽鹿没脙禄脫脨脙眉脰脨拢卢脭貌禄谩掳脩cache_status脰脙脦陋NGX_HTTP_CACHE_BYPASS
-        if (u->cache_status == NGX_HTTP_CACHE_BYPASS) {//脣碌脙梅脢脟脪貌脦陋脜盲脰脙脕脣xxx_cache_bypass鹿娄脛脺拢卢麓脫露酶脰卤陆脫麓脫潞贸露脣脠隆脢媒戮脻
+        //在客户端请求后端的时候，如果没有命中，则会把cache_status置为NGX_HTTP_CACHE_BYPASS
+        if (u->cache_status == NGX_HTTP_CACHE_BYPASS) {//说明是因为配置了xxx_cache_bypass功能，从而直接从后端取数据
 
             /* create cache if previously bypassed */
             /*
-               fastcgi_cache_bypass 脜盲脰脙脰赂脕卯驴脡脪脭脢鹿脗煤脳茫录脠露篓脤玫录镁碌脛脟毛脟贸脠脝鹿媒禄潞麓忙脢媒戮脻拢卢碌芦脢脟脮芒脨漏脟毛脟贸碌脛脧矛脫娄脢媒戮脻脪脌脠禄驴脡脪脭卤禄 upstream 脛拢驴茅禄潞麓忙隆拢 
+               fastcgi_cache_bypass 配置指令可以使满足既定条件的请求绕过缓存数据，但是这些请求的响应数据依然可以被 upstream 模块缓存。 
                */
             if (ngx_http_file_cache_create(r) != NGX_OK) {
                 ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
@@ -3337,17 +3337,17 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
     }
 
     /*
-     u->cacheable 脫脙脫脷驴脴脰脝脢脟路帽露脭脧矛脫娄陆酶脨脨禄潞麓忙虏脵脳梅隆拢脝盲脛卢脠脧脰碌脦陋 1拢卢脭脷禄潞麓忙露脕脠隆鹿媒鲁脤脰脨 驴脡脪貌脛鲁脨漏脤玫录镁陆芦脝盲脡猫脰脙脦陋 0拢卢录麓虏禄脭脷禄潞麓忙赂脙脟毛脟贸碌脛脧矛脫娄脢媒戮脻隆拢 
+     u->cacheable 用于控制是否对响应进行缓存操作。其默认值为 1，在缓存读取过程中 可因某些条件将其设置为 0，即不在缓存该请求的响应数据。 
      */
     if (u->cacheable) {
         now = ngx_time();
 
         /*
-           禄潞麓忙脛脷脠脻碌脛脫脨脨搂脢卤录盲脫脡 fastcgi_cache_valid  proxy_cache_valid脜盲脰脙脰赂脕卯脡猫脰脙拢卢虏垄脟脪脦麓戮颅赂脙脰赂脕卯脡猫脰脙碌脛脧矛脫娄脢媒戮脻脢脟虏禄禄谩卤禄 upstream 脛拢驴茅禄潞麓忙碌脛隆拢
+           缓存内容的有效时间由 fastcgi_cache_valid  proxy_cache_valid配置指令设置，并且未经该指令设置的响应数据是不会被 upstream 模块缓存的。
           */
         valid = r->cache->valid_sec;
 
-        if (valid == 0) { //赂鲁脰碌proxy_cache_valid xxx 4m;脰脨碌脛4m
+        if (valid == 0) { //赋值proxy_cache_valid xxx 4m;中的4m
             valid = ngx_http_file_cache_valid(u->conf->cache_valid,
                                               u->headers_in.status_n);
             if (valid) {
@@ -3357,13 +3357,13 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
 
         if (valid) {
             r->cache->date = now;
-            //脭脷赂脙潞炉脢媒脟掳ngx_http_upstream_process_header->p->process_header()潞炉脢媒脰脨脪脩戮颅陆芒脦枚鲁枚掳眉脤氓脥路虏驴脨脨 
-            r->cache->body_start = (u_short) (u->buffer.pos - u->buffer.start); //潞贸露脣路碌禄脴碌脛脥酶脪鲁掳眉脤氓虏驴路脰脭脷buffer脰脨碌脛麓忙麓垄脦禄脰脙
+            //在该函数前ngx_http_upstream_process_header->p->process_header()函数中已经解析出包体头部行 
+            r->cache->body_start = (u_short) (u->buffer.pos - u->buffer.start); //后端返回的网页包体部分在buffer中的存储位置
 
             if (u->headers_in.status_n == NGX_HTTP_OK
                 || u->headers_in.status_n == NGX_HTTP_PARTIAL_CONTENT)
             {
-                //潞贸露脣脨炉麓酶碌脛脥路虏驴脨脨"Last-Modified:XXX"赂鲁脰碌拢卢录没ngx_http_upstream_process_last_modified
+                //后端携带的头部行"Last-Modified:XXX"赋值，见ngx_http_upstream_process_last_modified
                 r->cache->last_modified = u->headers_in.last_modified_time;
 
                 if (u->headers_in.etag) {
@@ -3379,10 +3379,10 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
             }
 
             /* 
-               脳垄脪芒脮芒脢卤潞貌禄鹿脢脟脭脷露脕脠隆碌脷脪禄赂枚脥路虏驴脨脨碌脛鹿媒鲁脤脰脨(驴脡脛脺禄谩脨炉麓酶虏驴路脰禄貌脮脽脠芦虏驴掳眉脤氓脢媒戮脻脭脷脌茂脙忙)  
+               注意这时候还是在读取第一个头部行的过程中(可能会携带部分或者全部包体数据在里面)  
                  
-               upstream 脛拢驴茅脭脷脡锚脟毛 u->buffer 驴脮录盲脢卤拢卢脪脩戮颅脭陇脧脠脦陋禄潞麓忙脦脛录镁掳眉脥路路脰脜盲脕脣驴脮录盲拢卢脣霉脪脭驴脡脪脭脰卤陆脫碌梅脫脙 ngx_http_file_cache_set_header 
-               脭脷麓脣驴脮录盲脰脨鲁玫脢录禄炉禄潞麓忙脦脛录镁掳眉脥路拢潞 
+               upstream 模块在申请 u->buffer 空间时，已经预先为缓存文件包头分配了空间，所以可以直接调用 ngx_http_file_cache_set_header 
+               在此空间中初始化缓存文件包头： 
                */
             if (ngx_http_file_cache_set_header(r, u->buffer.start) != NGX_OK) {
                 ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
@@ -3407,18 +3407,18 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
     }
 
 #endif
-    //buffering路陆脢陆禄谩脳脽碌陆脮芒脌茂拢卢脥篓鹿媒pipe路垄脣脥拢卢脠莽鹿没脦陋0拢卢脭貌脡脧脙忙碌脛鲁脤脨貌禄谩return
+    //buffering方式会走到这里，通过pipe发送，如果为0，则上面的程序会return
     
     p = u->pipe;
 
-    //脡猫脰脙filter拢卢驴脡脪脭驴麓碌陆戮脥脢脟http碌脛脢盲鲁枚filter
+    //设置filter，可以看到就是http的输出filter
     p->output_filter = (ngx_event_pipe_output_filter_pt) ngx_http_output_filter;
     p->output_ctx = r;
     p->tag = u->output.tag;
-    p->bufs = u->conf->bufs;//脡猫脰脙bufs拢卢脣眉戮脥脢脟upstream脰脨脡猫脰脙碌脛bufs.u == &flcf->upstream;
-    p->busy_size = u->conf->busy_buffers_size; //脛卢脠脧
-    p->upstream = u->peer.connection;//赂鲁脰碌赂煤潞贸露脣upstream碌脛脕卢陆脫隆拢
-    p->downstream = c;//赂鲁脰碌赂煤驴脥禄搂露脣碌脛脕卢陆脫隆拢
+    p->bufs = u->conf->bufs;//设置bufs，它就是upstream中设置的bufs.u == &flcf->upstream;
+    p->busy_size = u->conf->busy_buffers_size; //默认
+    p->upstream = u->peer.connection;//赋值跟后端upstream的连接。
+    p->downstream = c;//赋值跟客户端的连接。
     p->pool = r->pool;
     p->log = c->log;
     p->limit_rate = u->conf->limit_rate;
@@ -3447,10 +3447,10 @@ ngx_http_upstream_send_response(ngx_http_request_t *r, ngx_http_upstream_t *u)
     if (p->cacheable) {
         p->temp_file->persistent = 1;
         /*
-脛卢脠脧脟茅驴枚脧脗p->temp_file->path = u->conf->temp_path; 脪虏戮脥脢脟脫脡ngx_http_fastcgi_temp_path脰赂露篓脗路戮露拢卢碌芦脢脟脠莽鹿没脢脟禄潞麓忙路陆脢陆(p->cacheable=1)虏垄脟脪脜盲脰脙
-proxy_cache_path(fastcgi_cache_path) /a/b碌脛脢卤潞貌麓酶脫脨use_temp_path=off(卤铆脢戮虏禄脢鹿脫脙ngx_http_fastcgi_temp_path脜盲脰脙碌脛path)拢卢
-脭貌p->temp_file->path = r->cache->file_cache->temp_path; 脪虏戮脥脢脟脕脵脢卤脦脛录镁/a/b/temp隆拢use_temp_path=off卤铆脢戮虏禄脢鹿脫脙ngx_http_fastcgi_temp_path
-脜盲脰脙碌脛脗路戮露拢卢露酶脢鹿脫脙脰赂露篓碌脛脕脵脢卤脗路戮露/a/b/temp   录没ngx_http_upstream_send_response 
+默认情况下p->temp_file->path = u->conf->temp_path; 也就是由ngx_http_fastcgi_temp_path指定路径，但是如果是缓存方式(p->cacheable=1)并且配置
+proxy_cache_path(fastcgi_cache_path) /a/b的时候带有use_temp_path=off(表示不使用ngx_http_fastcgi_temp_path配置的path)，
+则p->temp_file->path = r->cache->file_cache->temp_path; 也就是临时文件/a/b/temp。use_temp_path=off表示不使用ngx_http_fastcgi_temp_path
+配置的路径，而使用指定的临时路径/a/b/temp   见ngx_http_upstream_send_response 
 */
 #if (NGX_HTTP_CACHE)
         if (r->cache && r->cache->file_cache->temp_path) {
@@ -3473,14 +3473,14 @@ proxy_cache_path(fastcgi_cache_path) /a/b碌脛脢卤潞貌麓酶脫脨use_temp_
         return;
     }
 
-    p->preread_bufs->buf = &u->buffer; //掳脩掳眉脤氓虏驴路脰碌脛pos潞脥last麓忙麓垄碌陆p->preread_bufs->buf
+    p->preread_bufs->buf = &u->buffer; //把包体部分的pos和last存储到p->preread_bufs->buf
     p->preread_bufs->next = NULL;
     u->buffer.recycled = 1;
 
-    //脰庐脟掳露脕脠隆潞贸露脣脥路虏驴脨脨脨脜脧垄碌脛脢卤潞貌碌脛buf禄鹿脫脨脢拢脫脿脢媒戮脻拢卢脮芒虏驴路脰脢媒戮脻戮脥脢脟掳眉脤氓脢媒戮脻拢卢脪虏戮脥脢脟露脕脠隆脥路虏驴脨脨fastcgi卤锚脢露脨脜脧垄碌脛脢卤潞貌掳脩虏驴路脰掳眉脤氓脢媒戮脻露脕脠隆脕脣
+    //之前读取后端头部行信息的时候的buf还有剩余数据，这部分数据就是包体数据，也就是读取头部行fastcgi标识信息的时候把部分包体数据读取了
     p->preread_size = u->buffer.last - u->buffer.pos; 
     
-    if (u->cacheable) { //脳垄脪芒脳脽碌陆脮芒脌茂碌脛脢卤潞貌拢卢脟掳脙忙脪脩戮颅掳脩潞贸露脣脥路虏驴脨脨脨脜脧垄陆芒脦枚鲁枚脌麓脕脣拢卢u->buffer.pos脰赂脧貌碌脛脢脟脢碌录脢脢媒戮脻虏驴路脰
+    if (u->cacheable) { //注意走到这里的时候，前面已经把后端头部行信息解析出来了，u->buffer.pos指向的是实际数据部分
 
         p->buf_to_file = ngx_calloc_buf(r->pool);
         if (p->buf_to_file == NULL) {
@@ -3488,10 +3488,10 @@ proxy_cache_path(fastcgi_cache_path) /a/b碌脛脢卤潞貌麓酶脫脨use_temp_
             return;
         }
 
-        //脰赂脧貌碌脛脢脟脦陋禄帽脠隆潞贸露脣脥路虏驴脨脨碌脛脢卤潞貌路脰脜盲碌脛碌脷脪禄赂枚禄潞鲁氓脟酶拢卢buf麓贸脨隆脫脡xxx_buffer_size(fastcgi_buffer_size proxy_buffer_size memcached_buffer_size)脰赂露篓
+        //指向的是为获取后端头部行的时候分配的第一个缓冲区，buf大小由xxx_buffer_size(fastcgi_buffer_size proxy_buffer_size memcached_buffer_size)指定
         /*
-            脮芒脌茂脙忙脰禄麓忙麓垄脕脣脥路虏驴脨脨buffer脰脨脥路虏驴脨脨碌脛脛脷脠脻虏驴路脰拢卢脪貌脦陋潞贸脙忙脨麓脕脵脢卤脦脛录镁碌脛脢卤潞貌拢卢脨猫脪陋掳脩潞贸露脣脥路虏驴脨脨脪虏脨麓陆酶脌麓拢卢脫脡脫脷脟掳脙忙露脕脠隆脥路虏驴脨脨潞贸脰赂脮毛脪脩戮颅脰赂脧貌脕脣脢媒戮脻虏驴路脰
-            脪貌麓脣脨猫脪陋脕脵脢卤脫脙buf_to_file->start脰赂脧貌脥路虏驴脨脨虏驴路脰驴陋脢录拢卢pos脰赂脧貌脢媒戮脻虏驴路脰驴陋脢录拢卢脪虏戮脥脢脟脥路虏驴脨脨虏驴路脰陆谩脦虏
+            这里面只存储了头部行buffer中头部行的内容部分，因为后面写临时文件的时候，需要把后端头部行也写进来，由于前面读取头部行后指针已经指向了数据部分
+            因此需要临时用buf_to_file->start指向头部行部分开始，pos指向数据部分开始，也就是头部行部分结尾
           */
         p->buf_to_file->start = u->buffer.start; 
         p->buf_to_file->pos = u->buffer.start;
@@ -3511,7 +3511,7 @@ proxy_cache_path(fastcgi_cache_path) /a/b碌脛脢卤潞貌麓酶脫脨use_temp_
      * event_pipe would do u->buffer.last += p->preread_size
      * as though these bytes were read
      */
-    u->buffer.last = u->buffer.pos; //掳眉脤氓脢媒戮脻脰赂脧貌脭脷脟掳脙忙脪脩戮颅麓忙麓垄碌陆脕脣p->preread_bufs->buf
+    u->buffer.last = u->buffer.pos; //包体数据指向在前面已经存储到了p->preread_bufs->buf
 
     if (u->conf->cyclic_temp_file) {
 
@@ -3541,9 +3541,9 @@ proxy_cache_path(fastcgi_cache_path) /a/b碌脛脢卤潞貌麓酶脫脨use_temp_
         return;
     }
 
-    //buffering路陆脢陆拢卢潞贸露脣脥路虏驴脨脜脧垄脪脩戮颅露脕脠隆脥锚卤脧脕脣拢卢脠莽鹿没潞贸露脣禄鹿脫脨掳眉脤氓脨猫脪陋路垄脣脥拢卢脭貌卤戮露脣脥篓鹿媒赂脙路陆脢陆露脕脠隆
+    //buffering方式，后端头部信息已经读取完毕了，如果后端还有包体需要发送，则本端通过该方式读取
     u->read_event_handler = ngx_http_upstream_process_upstream;
-    r->write_event_handler = ngx_http_upstream_process_downstream; //碌卤驴脡脨麓脢脗录镁麓脵路垄碌脛脢卤潞貌拢卢脥篓鹿媒赂脙潞炉脢媒录脤脨酶脨麓脢媒戮脻
+    r->write_event_handler = ngx_http_upstream_process_downstream; //当可写事件促发的时候，通过该函数继续写数据
 
     ngx_http_upstream_process_upstream(r, u);
 }
@@ -3678,7 +3678,7 @@ ngx_http_upstream_process_upgraded(ngx_http_request_t *r,
         return;
     }
 
-    if (upstream->read->timedout || upstream->write->timedout) { //脭脷路垄脣脥脟毛脟贸碌陆潞贸露脣碌脛脢卤潞貌拢卢脦脪脙脟脨猫脪陋碌脠麓媒露脭路陆脫娄麓冒拢卢脪貌麓脣脡猫脰脙脕脣露脕鲁卢脢卤露篓脢卤脝梅拢卢录没ngx_http_upstream_send_request
+    if (upstream->read->timedout || upstream->write->timedout) { //在发送请求到后端的时候，我们需要等待对方应答，因此设置了读超时定时器，见ngx_http_upstream_send_request
         ngx_connection_error(c, NGX_ETIMEDOUT, "upstream timed out");
         ngx_http_upstream_finalize_request(r, u, NGX_HTTP_GATEWAY_TIME_OUT);
         return;
@@ -3825,11 +3825,11 @@ ngx_http_upstream_process_upgraded(ngx_http_request_t *r,
 }
 
 /*
-ngx_http_upstream_send_response路垄脣脥脥锚HERDER潞贸拢卢脠莽鹿没脢脟路脟禄潞鲁氓脛拢脢陆拢卢禄谩碌梅脫脙脮芒脌茂陆芦脢媒戮脻路垄脣脥鲁枚脠楼碌脛隆拢
-脮芒赂枚潞炉脢媒脢碌录脢脡脧脜脨露脧脪禄脧脗鲁卢脢卤潞贸拢卢戮脥碌梅脫脙ngx_http_upstream_process_non_buffered_request脕脣隆拢nginx脌脧路陆路篓隆拢
+ngx_http_upstream_send_response发送完HERDER后，如果是非缓冲模式，会调用这里将数据发送出去的。
+这个函数实际上判断一下超时后，就调用ngx_http_upstream_process_non_buffered_request了。nginx老方法。
 */
 static void 
-//buffring脛拢脢陆脥篓鹿媒ngx_http_upstream_process_upstream赂脙潞炉脢媒麓娄脌铆拢卢路脟buffring脛拢脢陆脥篓鹿媒ngx_http_upstream_process_non_buffered_downstream麓娄脌铆
+//buffring模式通过ngx_http_upstream_process_upstream该函数处理，非buffring模式通过ngx_http_upstream_process_non_buffered_downstream处理
 ngx_http_upstream_process_non_buffered_downstream(ngx_http_request_t *r)
 {
     ngx_event_t          *wev;
@@ -3852,12 +3852,12 @@ ngx_http_upstream_process_non_buffered_downstream(ngx_http_request_t *r)
         return;
     }
 
-    //脧脗脙忙驴陋脢录陆芦out_bufs脌茂脙忙碌脛脢媒戮脻路垄脣脥鲁枚脠楼拢卢脠禄潞贸露脕脠隆脢媒戮脻拢卢脠禄潞贸路垄脣脥拢卢脠莽麓脣脩颅禄路隆拢
+    //下面开始将out_bufs里面的数据发送出去，然后读取数据，然后发送，如此循环。
     ngx_http_upstream_process_non_buffered_request(r, 1);
 }
 
-//ngx_http_upstream_send_response脡猫脰脙潞脥碌梅脫脙脮芒脌茂拢卢碌卤脡脧脫脦碌脛PROXY脫脨脢媒戮脻碌陆脌麓拢卢驴脡脪脭露脕脠隆碌脛脢卤潞貌碌梅脫脙脮芒脌茂隆拢
-//buffering路陆脢陆拢卢脦陋ngx_http_fastcgi_input_filter  路脟buffering路陆脢陆脦陋ngx_http_upstream_non_buffered_filter
+//ngx_http_upstream_send_response设置和调用这里，当上游的PROXY有数据到来，可以读取的时候调用这里。
+//buffering方式，为ngx_http_fastcgi_input_filter  非buffering方式为ngx_http_upstream_non_buffered_filter
 static void
 ngx_http_upstream_process_non_buffered_upstream(ngx_http_request_t *r,
     ngx_http_upstream_t *u)
@@ -3871,20 +3871,20 @@ ngx_http_upstream_process_non_buffered_upstream(ngx_http_request_t *r,
 
     c->log->action = "reading upstream";
 
-    if (c->read->timedout) { //脭脷路垄脣脥脟毛脟贸碌陆潞贸露脣碌脛脢卤潞貌拢卢脦脪脙脟脨猫脪陋碌脠麓媒露脭路陆脫娄麓冒拢卢脪貌麓脣脡猫脰脙脕脣露脕鲁卢脢卤露篓脢卤脝梅拢卢录没ngx_http_upstream_send_request
+    if (c->read->timedout) { //在发送请求到后端的时候，我们需要等待对方应答，因此设置了读超时定时器，见ngx_http_upstream_send_request
         ngx_connection_error(c, NGX_ETIMEDOUT, "upstream timed out");
         ngx_http_upstream_finalize_request(r, u, NGX_HTTP_GATEWAY_TIME_OUT);
         return;
     }
     
-    //脮芒脌茂赂煤ngx_http_upstream_process_non_buffered_downstream脝盲脢碌戮脥脪禄赂枚脟酶卤冒: 虏脦脢媒脦陋0拢卢卤铆脢戮虏禄脫脙脕垄录麓路垄脣脥脢媒戮脻拢卢脪貌脦陋脙禄脫脨脢媒戮脻驴脡脪脭路垄脣脥拢卢碌脙脧脠露脕脠隆虏脜脨脨隆拢
+    //这里跟ngx_http_upstream_process_non_buffered_downstream其实就一个区别: 参数为0，表示不用立即发送数据，因为没有数据可以发送，得先读取才行。
     ngx_http_upstream_process_non_buffered_request(r, 0);
 }
 
 /*
-碌梅脫脙鹿媒脗脣脛拢驴茅拢卢陆芦脢媒戮脻路垄脣脥鲁枚脠楼拢卢do_write脦陋脢脟路帽脪陋赂酶驴脥禄搂露脣路垄脣脥脢媒戮脻隆拢
-1.脠莽鹿没脪陋路垄脣脥拢卢戮脥碌梅脫脙ngx_http_output_filter陆芦脢媒戮脻路垄脣脥鲁枚脠楼隆拢
-2.脠禄潞贸ngx_unix_recv露脕脠隆脢媒戮脻拢卢路脜脠毛out_bufs脌茂脙忙脠楼隆拢脠莽麓脣脩颅禄路
+调用过滤模块，将数据发送出去，do_write为是否要给客户端发送数据。
+1.如果要发送，就调用ngx_http_output_filter将数据发送出去。
+2.然后ngx_unix_recv读取数据，放入out_bufs里面去。如此循环
 */
 static void
 ngx_http_upstream_process_non_buffered_request(ngx_http_request_t *r,
@@ -3899,20 +3899,20 @@ ngx_http_upstream_process_non_buffered_request(ngx_http_request_t *r,
     ngx_http_core_loc_conf_t  *clcf;
 
     u = r->upstream;
-    downstream = r->connection;//脮脪碌陆脮芒赂枚脟毛脟贸碌脛驴脥禄搂露脣脕卢陆脫
-    upstream = u->peer.connection;//脮脪碌陆脡脧脫脦碌脛脕卢陆脫
+    downstream = r->connection;//找到这个请求的客户端连接
+    upstream = u->peer.connection;//找到上游的连接
 
-    b = &u->buffer; //脮脪碌陆脮芒脹莽脪陋路垄脣脥碌脛脢媒戮脻拢卢虏禄鹿媒麓贸虏驴路脰露录卤禄input filter路脜碌陆out_bufs脌茂脙忙脠楼脕脣隆拢
+    b = &u->buffer; //找到这坨要发送的数据，不过大部分都被input filter放到out_bufs里面去了。
 
-    do_write = do_write || u->length == 0; //do_write脦陋1脢卤卤铆脢戮脪陋脕垄录麓路垄脣脥赂酶驴脥禄搂露脣隆拢
+    do_write = do_write || u->length == 0; //do_write为1时表示要立即发送给客户端。
 
     for ( ;; ) {
 
-        if (do_write) { //脪陋脕垄录麓路垄脣脥隆拢
-            //out_bufs脰脨碌脛脢媒戮脻脢脟麓脫ngx_http_fastcgi_non_buffered_filter禄帽脠隆
+        if (do_write) { //要立即发送。
+            //out_bufs中的数据是从ngx_http_fastcgi_non_buffered_filter获取
             if (u->out_bufs || u->busy_bufs) {
-                //脠莽鹿没u->out_bufs虏禄脦陋NULL脭貌脣碌脙梅脫脨脨猫脪陋路垄脣脥碌脛脢媒戮脻拢卢脮芒脢脟u->input_filter_init(u->input_filter_ctx)(ngx_http_upstream_non_buffered_filter)驴陆卤麓碌陆脮芒脌茂碌脛隆拢
-				//u->busy_bufs麓煤卤铆脢脟脭脷露脕脠隆fastcgi脟毛脟贸脥路碌脛脢卤潞貌拢卢驴脡脛脺脌茂脙忙禄谩麓酶脫脨掳眉脤氓脢媒戮脻拢卢戮脥脢脟脥篓鹿媒脮芒脌茂路垄脣脥
+                //如果u->out_bufs不为NULL则说明有需要发送的数据，这是u->input_filter_init(u->input_filter_ctx)(ngx_http_upstream_non_buffered_filter)拷贝到这里的。
+                //u->busy_bufs代表是在读取fastcgi请求头的时候，可能里面会带有包体数据，就是通过这里发送
                 rc = ngx_http_output_filter(r, u->out_bufs);
 
                 if (rc == NGX_ERROR) {
@@ -3920,16 +3920,16 @@ ngx_http_upstream_process_non_buffered_request(ngx_http_request_t *r,
                     return;
                 }
 
-                //戮脥脢脟掳脩ngx_http_output_filter碌梅脫脙潞贸脦麓路垄脣脥脥锚卤脧碌脛脢媒戮脻buf脤铆录脫碌陆busy_bufs脰脨拢卢脠莽鹿没脧脗麓脦脭脵麓脦碌梅脫脙ngx_http_output_filter潞贸掳脩busy_bufs脰脨脡脧脪禄麓脦脙禄脫脨路垄脣脥脥锚碌脛路垄脣脥鲁枚脠楼脕脣拢卢脭貌掳脩露脭脫娄碌脛buf脪脝鲁媒脤铆录脫碌陆free脰脨
-                //脧脗脙忙陆芦out_bufs碌脛脭陋脣脴脪脝露炉碌陆busy_bufs碌脛潞贸脙忙拢禄陆芦脪脩戮颅路垄脣脥脥锚卤脧碌脛busy_bufs脕麓卤铆脭陋脣脴脪脝露炉碌陆free_bufs脌茂脙忙
+                //就是把ngx_http_output_filter调用后未发送完毕的数据buf添加到busy_bufs中，如果下次再次调用ngx_http_output_filter后把busy_bufs中上一次没有发送完的发送出去了，则把对应的buf移除添加到free中
+                //下面将out_bufs的元素移动到busy_bufs的后面；将已经发送完毕的busy_bufs链表元素移动到free_bufs里面
                 ngx_chain_update_chains(r->pool, &u->free_bufs, &u->busy_bufs,
                                         &u->out_bufs, u->output.tag);
             }
 
-            if (u->busy_bufs == NULL) {//busy_bufs脙禄脫脨脕脣拢卢露录路垄脥锚脕脣隆拢脧毛脪陋路垄脣脥碌脛脢媒戮脻露录脪脩戮颅路垄脣脥脥锚卤脧
+            if (u->busy_bufs == NULL) {//busy_bufs没有了，都发完了。想要发送的数据都已经发送完毕
 
                 if (u->length == 0
-                    || (upstream->read->eof && u->length == -1)) //掳眉脤氓脢媒戮脻脪脩戮颅露脕脥锚脕脣
+                    || (upstream->read->eof && u->length == -1)) //包体数据已经读完了
                 {
                     ngx_http_upstream_finalize_request(r, u, 0);
                     return;
@@ -3950,20 +3950,20 @@ ngx_http_upstream_process_non_buffered_request(ngx_http_request_t *r,
                     return;
                 }
 
-                b->pos = b->start;//脰脴脰脙u->buffer,脪脭卤茫脫毛脧脗麓脦脢鹿脫脙拢卢麓脫驴陋脢录脝冒隆拢b脰赂脧貌碌脛驴脮录盲驴脡脪脭录脤脨酶露脕脢媒戮脻脕脣
+                b->pos = b->start;//重置u->buffer,以便与下次使用，从开始起。b指向的空间可以继续读数据了
                 b->last = b->start;
             }
         }
 
-        size = b->end - b->last;//碌脙碌陆碌卤脟掳buf碌脛脢拢脫脿驴脮录盲
+        size = b->end - b->last;//得到当前buf的剩余空间
 
         if (size && upstream->read->ready) { 
-        //脦陋脢虏脙麓驴脡脛脺脳脽碌陆脮芒脌茂?脪貌脦陋脭脷ngx_http_upstream_process_header脰脨露脕脠隆潞贸露脣脢媒戮脻碌脛脢卤潞貌拢卢buf麓贸脨隆脛卢脠脧脦陋脪鲁脙忙麓贸脨隆ngx_pagesize
-        //碌楼脫脨驴脡脛脺潞贸露脣路垄脣脥鹿媒脌麓碌脛脢媒戮脻卤脠ngx_pagesize麓贸拢卢脪貌麓脣戮脥脙禄脫脨露脕脥锚拢卢脪虏戮脥脢脟recv脰脨虏禄禄谩掳脡ready脰脙0拢卢脣霉脪脭脮芒脌茂驴脡脪脭录脤脨酶露脕
+        //为什么可能走到这里?因为在ngx_http_upstream_process_header中读取后端数据的时候，buf大小默认为页面大小ngx_pagesize
+        //单有可能后端发送过来的数据比ngx_pagesize大，因此就没有读完，也就是recv中不会吧ready置0，所以这里可以继续读
 
             n = upstream->recv(upstream, b->last, size);
 
-            if (n == NGX_AGAIN) { //脣碌脙梅脪脩戮颅脛脷潞脣禄潞鲁氓脟酶脢媒戮脻脪脩戮颅露脕脥锚拢卢脥脣鲁枚脩颅禄路拢卢脠禄潞贸赂霉戮脻epoll脢脗录镁脌麓录脤脨酶麓楼路垄露脕脠隆潞贸露脣脢媒戮脻
+            if (n == NGX_AGAIN) { //说明已经内核缓冲区数据已经读完，退出循环，然后根据epoll事件来继续触发读取后端数据
                 break;
             }
 
@@ -3976,7 +3976,7 @@ ngx_http_upstream_process_non_buffered_request(ngx_http_request_t *r,
                 }
             }
 
-            do_write = 1;//脪貌脦陋赂脮赂脮脦脼脗脹脠莽潞脦n麓贸脫脷0拢卢脣霉脪脭露脕脠隆脕脣脢媒戮脻拢卢脛脟脙麓脧脗脪禄赂枚脩颅禄路禄谩陆芦out_bufs碌脛脢媒戮脻路垄脣脥鲁枚脠楼碌脛隆拢
+            do_write = 1;//因为刚刚无论如何n大于0，所以读取了数据，那么下一个循环会将out_bufs的数据发送出去的。
 
             continue;
         }
@@ -3996,15 +3996,15 @@ ngx_http_upstream_process_non_buffered_request(ngx_http_request_t *r,
     }
 
     if (downstream->write->active && !downstream->write->ready) { 
-    //脌媒脠莽脦脪掳脩脢媒戮脻掳脩脢媒戮脻脨麓碌陆脛脷潞脣脨颅脪茅脮禄碌陆脨麓脗煤脨颅脪茅脮禄禄潞麓忙拢卢碌芦脢脟露脭露脣脪禄脰卤虏禄露脕脠隆碌脛脢卤潞貌拢卢脢媒戮脻脪禄脰卤路垄虏禄鲁枚脠楼脕脣拢卢脪虏虏禄禄谩麓楼路垄epoll_wait脨麓脢脗录镁拢卢
-    //脮芒脌茂录脫赂枚露篓脢卤脝梅戮脥脢脟脦陋脕脣卤脺脙芒脮芒脰脰脟茅驴枚路垄脡煤
+    //例如我把数据把数据写到内核协议栈到写满协议栈缓存，但是对端一直不读取的时候，数据一直发不出去了，也不会触发epoll_wait写事件，
+    //这里加个定时器就是为了避免这种情况发生
         ngx_add_timer(downstream->write, clcf->send_timeout, NGX_FUNC_LINE);
 
     } else if (downstream->write->timer_set) {
         ngx_del_timer(downstream->write, NGX_FUNC_LINE);
     }
 
-    if (ngx_handle_read_event(upstream->read, 0, NGX_FUNC_LINE) != NGX_OK) { //epoll脭脷accept碌脛脢卤潞貌露脕脨麓脪脩戮颅录脫脠毛epoll脰脨拢卢脪貌麓脣露脭epoll脌麓脣碌脙禄脫脙
+    if (ngx_handle_read_event(upstream->read, 0, NGX_FUNC_LINE) != NGX_OK) { //epoll在accept的时候读写已经加入epoll中，因此对epoll来说没用
         ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
         return;
     }
@@ -4025,9 +4025,9 @@ ngx_http_upstream_non_buffered_filter_init(void *data)
 }
 
 /*
-陆芦u->buffer.last - u->buffer.pos脰庐录盲碌脛脢媒戮脻路脜碌陆u->out_bufs路垄脣脥禄潞鲁氓脠楼脕麓卤铆脌茂脙忙隆拢脮芒脩霉驴脡脨麓碌脛脢卤潞貌戮脥禄谩路垄脣脥赂酶驴脥禄搂露脣隆拢
-ngx_http_upstream_process_non_buffered_request潞炉脢媒禄谩露脕脠隆out_bufs脌茂脙忙碌脛脢媒戮脻拢卢脠禄潞贸碌梅脫脙脢盲鲁枚鹿媒脗脣脕麓陆脫陆酶脨脨路垄脣脥碌脛隆拢
-*/ //buffering路陆脢陆拢卢脦陋ngx_http_fastcgi_input_filter  路脟buffering路陆脢陆脦陋ngx_http_upstream_non_buffered_filter
+将u->buffer.last - u->buffer.pos之间的数据放到u->out_bufs发送缓冲去链表里面。这样可写的时候就会发送给客户端。
+ngx_http_upstream_process_non_buffered_request函数会读取out_bufs里面的数据，然后调用输出过滤链接进行发送的。
+*/ //buffering方式，为ngx_http_fastcgi_input_filter  非buffering方式为ngx_http_upstream_non_buffered_filter
 static ngx_int_t
 ngx_http_upstream_non_buffered_filter(void *data, ssize_t bytes)
 {
@@ -4039,32 +4039,32 @@ ngx_http_upstream_non_buffered_filter(void *data, ssize_t bytes)
 
     u = r->upstream;
 
-    for (cl = u->out_bufs, ll = &u->out_bufs; cl; cl = cl->next) { //卤茅脌煤u->out_bufs
+    for (cl = u->out_bufs, ll = &u->out_bufs; cl; cl = cl->next) { //遍历u->out_bufs
         ll = &cl->next;
     }
 
-    cl = ngx_chain_get_free_buf(r->pool, &u->free_bufs);//路脰脜盲脪禄赂枚驴脮脧脨碌脛chain buff
+    cl = ngx_chain_get_free_buf(r->pool, &u->free_bufs);//分配一个空闲的chain buff
     if (cl == NULL) {
         return NGX_ERROR;
     }
 
-    *ll = cl; //陆芦脨脗脡锚脟毛碌脛禄潞麓忙脕麓陆脫陆酶脌麓隆拢
+    *ll = cl; //将新申请的缓存链接进来。
 
     cl->buf->flush = 1;
     cl->buf->memory = 1;
 
-    b = &u->buffer; //脠楼鲁媒陆芦脪陋路垄脣脥碌脛脮芒赂枚脢媒戮脻拢卢脫娄赂脙脢脟驴脥禄搂露脣碌脛路碌禄脴脢媒戮脻脤氓隆拢陆芦脝盲路脜脠毛
+    b = &u->buffer; //去除将要发送的这个数据，应该是客户端的返回数据体。将其放入
 
     cl->buf->pos = b->last;
     b->last += bytes;
     cl->buf->last = b->last;
     cl->buf->tag = u->output.tag;
 
-    if (u->length == -1) {//u->length卤铆脢戮陆芦脪陋路垄脣脥碌脛脢媒戮脻麓贸脨隆脠莽鹿没脦陋-1,脭貌脣碌脙梅潞贸露脣脨颅脪茅虏垄脙禄脫脨脰赂露篓脨猫脪陋路垄脣脥碌脛麓贸脨隆(脌媒脠莽chunk路陆脢陆)拢卢麓脣脢卤脦脪脙脟脰禄脨猫脪陋路垄脣脥脦脪脙脟陆脫脢脮碌陆碌脛.
+    if (u->length == -1) {//u->length表示将要发送的数据大小如果为-1,则说明后端协议并没有指定需要发送的大小(例如chunk方式)，此时我们只需要发送我们接收到的.
         return NGX_OK;
     }
 
-    u->length -= bytes;//赂眉脨脗陆芦脪陋路垄脣脥碌脛脢媒戮脻麓贸脨隆
+    u->length -= bytes;//更新将要发送的数据大小
  
     return NGX_OK;
 }
@@ -4140,14 +4140,14 @@ ngx_http_upstream_process_downstream(ngx_http_request_t *r)
 }
 
 /*
-脮芒脢脟脭脷脫脨buffering碌脛脟茅驴枚脧脗脢鹿脫脙碌脛潞炉脢媒隆拢
-ngx_http_upstream_send_response碌梅脫脙脮芒脌茂路垄露炉脪禄脧脗脢媒戮脻露脕脠隆隆拢脪脭潞贸脫脨脢媒戮脻驴脡露脕碌脛脢卤潞貌脪虏禄谩碌梅脫脙脮芒脌茂碌脛露脕脠隆潞贸露脣脢媒戮脻隆拢脡猫脰脙碌陆脕脣u->read_event_handler脕脣隆拢
+这是在有buffering的情况下使用的函数。
+ngx_http_upstream_send_response调用这里发动一下数据读取。以后有数据可读的时候也会调用这里的读取后端数据。设置到了u->read_event_handler了。
 */
 static void
 ngx_http_upstream_process_upstream(ngx_http_request_t *r,
     ngx_http_upstream_t *u) 
-//buffring脛拢脢陆脥篓鹿媒ngx_http_upstream_process_upstream赂脙潞炉脢媒麓娄脌铆拢卢路脟buffring脛拢脢陆脥篓鹿媒ngx_http_upstream_process_non_buffered_downstream麓娄脌铆
-{ //脳垄脪芒脳脽碌陆脮芒脌茂碌脛脢卤潞貌拢卢潞贸露脣路垄脣脥碌脛脥路虏驴脨脨脨脜脧垄脪脩戮颅脭脷脟掳脙忙碌脛ngx_http_upstream_send_response->ngx_http_send_header脪脩戮颅掳脩脥路虏驴脨脨虏驴路脰路垄脣脥赂酶驴脥禄搂露脣脕脣
+//buffring模式通过ngx_http_upstream_process_upstream该函数处理，非buffring模式通过ngx_http_upstream_process_non_buffered_downstream处理
+{ //注意走到这里的时候，后端发送的头部行信息已经在前面的ngx_http_upstream_send_response->ngx_http_send_header已经把头部行部分发送给客户端了
     ngx_event_t       *rev;
     ngx_event_pipe_t  *p;
     ngx_connection_t  *c;
@@ -4161,7 +4161,7 @@ ngx_http_upstream_process_upstream(ngx_http_request_t *r,
 
     c->log->action = "reading upstream";
 
-    if (rev->timedout) { //脭脷路垄脣脥脟毛脟贸碌陆潞贸露脣碌脛脢卤潞貌拢卢脦脪脙脟脨猫脪陋碌脠麓媒露脭路陆脫娄麓冒拢卢脪貌麓脣脡猫脰脙脕脣露脕鲁卢脢卤露篓脢卤脝梅拢卢录没ngx_http_upstream_send_request
+    if (rev->timedout) { //在发送请求到后端的时候，我们需要等待对方应答，因此设置了读超时定时器，见ngx_http_upstream_send_request
 
         if (rev->delayed) {
 
@@ -4188,7 +4188,7 @@ ngx_http_upstream_process_upstream(ngx_http_request_t *r,
             ngx_connection_error(c, NGX_ETIMEDOUT, "upstream timed out");
         }
 
-    } else {//脟毛脟贸脙禄脫脨鲁卢脢卤拢卢脛脟脙麓露脭潞贸露脣拢卢麓娄脌铆脪禄脧脗露脕脢脗录镁隆拢ngx_event_pipe驴陋脢录麓娄脌铆
+    } else {//请求没有超时，那么对后端，处理一下读事件。ngx_event_pipe开始处理
 
         if (rev->delayed) {
 
@@ -4202,24 +4202,24 @@ ngx_http_upstream_process_upstream(ngx_http_request_t *r,
             return;
         }
 
-        if (ngx_event_pipe(p, 0) == NGX_ABORT) { //脳垄脪芒脮芒脌茂碌脛do_write脦陋0
+        if (ngx_event_pipe(p, 0) == NGX_ABORT) { //注意这里的do_write为0
             ngx_http_upstream_finalize_request(r, u, NGX_ERROR);
             return;
         }
     }
-    //脳垄脪芒脳脽碌陆脮芒脌茂碌脛脢卤潞貌拢卢潞贸露脣路垄脣脥碌脛脥路虏驴脨脨脨脜脧垄脪脩戮颅脭脷脟掳脙忙碌脛ngx_http_upstream_send_response->ngx_http_send_header脪脩戮颅掳脩脥路虏驴脨脨虏驴路脰路垄脣脥赂酶驴脥禄搂露脣脕脣
-    //赂脙潞炉脢媒麓娄脌铆碌脛脰禄脢脟潞贸露脣路脜禄脴鹿媒脌麓碌脛脥酶脪鲁掳眉脤氓虏驴路脰
+    //注意走到这里的时候，后端发送的头部行信息已经在前面的ngx_http_upstream_send_response->ngx_http_send_header已经把头部行部分发送给客户端了
+    //该函数处理的只是后端放回过来的网页包体部分
 
     ngx_http_upstream_process_request(r, u);
 }
 
-//ngx_http_upstream_init_request->ngx_http_upstream_cache 驴脥禄搂露脣禄帽脠隆禄潞麓忙 潞贸露脣脫娄麓冒禄脴脌麓脢媒戮脻潞贸脭脷ngx_http_file_cache_create脰脨麓麓陆篓脕脵脢卤脦脛录镁
-//潞贸露脣禄潞麓忙脦脛录镁麓麓陆篓脭脷ngx_http_upstream_send_response拢卢潞贸露脣脫娄麓冒脢媒戮脻脭脷ngx_http_upstream_send_response->ngx_http_upstream_process_request->ngx_http_file_cache_update脰脨陆酶脨脨禄潞麓忙
+//ngx_http_upstream_init_request->ngx_http_upstream_cache 客户端获取缓存 后端应答回来数据后在ngx_http_file_cache_create中创建临时文件
+//后端缓存文件创建在ngx_http_upstream_send_response，后端应答数据在ngx_http_upstream_send_response->ngx_http_upstream_process_request->ngx_http_file_cache_update中进行缓存
 static void
 ngx_http_upstream_process_request(ngx_http_request_t *r,
     ngx_http_upstream_t *u)
-{//脳垄脪芒脳脽碌陆脮芒脌茂碌脛脢卤潞貌拢卢潞贸露脣路垄脣脥碌脛脥路虏驴脨脨脨脜脧垄脪脩戮颅脭脷脟掳脙忙碌脛ngx_http_upstream_send_response->ngx_http_send_header脪脩戮颅掳脩脥路虏驴脨脨虏驴路脰路垄脣脥赂酶驴脥禄搂露脣脕脣
-//赂脙潞炉脢媒麓娄脌铆碌脛脰禄脢脟潞贸露脣路脜禄脴鹿媒脌麓碌脛脥酶脪鲁掳眉脤氓虏驴路脰
+{//注意走到这里的时候，后端发送的头部行信息已经在前面的ngx_http_upstream_send_response->ngx_http_send_header已经把头部行部分发送给客户端了
+//该函数处理的只是后端放回过来的网页包体部分
     ngx_temp_file_t   *tf;
     ngx_event_pipe_t  *p;
 
@@ -4229,7 +4229,7 @@ ngx_http_upstream_process_request(ngx_http_request_t *r,
 
         if (u->store) {
 
-            if (p->upstream_eof || p->upstream_done) { //卤戮麓脦脛脷潞脣禄潞鲁氓脟酶脢媒戮脻露脕脠隆脥锚卤脧拢卢禄貌脮脽潞贸露脣脣霉脫脨脢媒戮脻露脕脠隆脥锚卤脧
+            if (p->upstream_eof || p->upstream_done) { //本次内核缓冲区数据读取完毕，或者后端所有数据读取完毕
 
                 tf = p->temp_file;
 
@@ -4257,14 +4257,14 @@ ngx_http_upstream_process_request(ngx_http_request_t *r,
         }
         
         /*
-          脭脷Nginx脢脮碌陆潞贸露脣路镁脦帽脝梅碌脛脧矛脫娄脰庐潞贸拢卢禄谩掳脩脮芒赂枚脧矛脫娄路垄禄脴赂酶脫脙禄搂隆拢露酶脠莽鹿没禄潞麓忙鹿娄脛脺脝么脫脙碌脛禄掳拢卢Nginx戮脥禄谩掳脩脧矛脫娄麓忙脠毛麓脜脜脤脌茂隆拢
-          */ //潞贸露脣脫娄麓冒脢媒戮脻脭脷ngx_http_upstream_process_request->ngx_http_file_cache_update脰脨陆酶脨脨禄潞麓忙
-        if (u->cacheable) { //脢脟路帽脪陋禄潞麓忙拢卢录麓proxy_no_cache脰赂脕卯  
+          在Nginx收到后端服务器的响应之后，会把这个响应发回给用户。而如果缓存功能启用的话，Nginx就会把响应存入磁盘里。
+          */ //后端应答数据在ngx_http_upstream_process_request->ngx_http_file_cache_update中进行缓存
+        if (u->cacheable) { //是否要缓存，即proxy_no_cache指令  
 
-            if (p->upstream_done) { //潞贸露脣脢媒戮脻脪脩戮颅露脕脠隆脥锚卤脧,脨麓脠毛禄潞麓忙
+            if (p->upstream_done) { //后端数据已经读取完毕,写入缓存
                 ngx_http_file_cache_update(r, p->temp_file);
 
-            } else if (p->upstream_eof) { //p->upstream->recv_chain(p->upstream, chain, limit);路碌禄脴0碌脛脢卤潞貌脰脙1
+            } else if (p->upstream_eof) { //p->upstream->recv_chain(p->upstream, chain, limit);返回0的时候置1
                         
                 if (p->length == -1
                     && (u->headers_in.content_length_n == -1
@@ -4412,10 +4412,10 @@ ngx_http_upstream_dummy_handler(ngx_http_request_t *r, ngx_http_upstream_t *u)
                    "http upstream dummy handler");
 }
 
-//脠莽鹿没虏芒脢脭脢搂掳脺拢卢碌梅脫脙ngx_http_upstream_next潞炉脢媒拢卢脮芒赂枚潞炉脢媒驴脡脛脺脭脵麓脦碌梅脫脙peer.get碌梅脫脙卤冒碌脛潞贸露脣路镁脦帽脝梅陆酶脨脨脕卢陆脫隆拢
-static void // ngx_http_upstream_next 路陆路篓鲁垄脢脭脫毛脝盲脣没脡脧脫脦路镁脦帽脝梅陆篓脕垄脕卢陆脫  脢脳脧脠脨猫脪陋赂霉戮脻潞贸露脣路碌禄脴碌脛status潞脥鲁卢脢卤碌脠脨脜脧垄脌麓脜脨露脧脢脟路帽脨猫脪陋脰脴脨脗脕卢陆脫脧脗脪禄赂枚潞贸露脣路镁脦帽脝梅
+//如果测试失败，调用ngx_http_upstream_next函数，这个函数可能再次调用peer.get调用别的后端服务器进行连接。
+static void // ngx_http_upstream_next 方法尝试与其他上游服务器建立连接  首先需要根据后端返回的status和超时等信息来判断是否需要重新连接下一个后端服务器
 ngx_http_upstream_next(ngx_http_request_t *r, ngx_http_upstream_t *u,
-    ngx_uint_t ft_type) //潞脥潞贸露脣脛鲁赂枚路镁脦帽脝梅陆禄禄楼鲁枚麓铆(脌媒脠莽connect)拢卢脭貌脩隆脭帽脧脗脪禄赂枚潞贸露脣路镁脦帽脝梅拢卢脥卢脢卤卤锚录脟赂脙路镁脦帽脝梅鲁枚麓铆
+    ngx_uint_t ft_type) //和后端某个服务器交互出错(例如connect)，则选择下一个后端服务器，同时标记该服务器出错
 {
     ngx_msec_t  timeout;
     ngx_uint_t  status, state;
@@ -4426,7 +4426,7 @@ ngx_http_upstream_next(ngx_http_request_t *r, ngx_http_upstream_t *u,
     if (u->peer.sockaddr) {
 
         if (ft_type == NGX_HTTP_UPSTREAM_FT_HTTP_403
-            || ft_type == NGX_HTTP_UPSTREAM_FT_HTTP_404) //潞贸露脣路镁脦帽脝梅戮脺戮酶路镁脦帽拢卢卤铆脢戮禄鹿脢脟驴脡脫脙碌脛拢卢脰禄脢脟戮脺戮酶脕脣碌卤脟掳脟毛脟贸
+            || ft_type == NGX_HTTP_UPSTREAM_FT_HTTP_404) //后端服务器拒绝服务，表示还是可用的，只是拒绝了当前请求
         {
             state = NGX_PEER_NEXT;
 
@@ -4494,7 +4494,7 @@ ngx_http_upstream_next(ngx_http_request_t *r, ngx_http_upstream_t *u,
         if (u->peer.tries == 0
             || !(u->conf->next_upstream & ft_type)
             || (u->request_sent && r->request_body_no_buffering)
-            || (timeout && ngx_current_msec - u->peer.start_time >= timeout))  //脜脨露脧脢脟路帽脨猫脪陋脰脴脨脗脕卢陆脫脧脗脪禄赂枚潞贸露脣路镁脦帽脝梅拢卢虏禄脨猫脪陋脭貌脰卤陆脫路碌禄脴麓铆脦贸赂酶驴脥禄搂露脣
+            || (timeout && ngx_current_msec - u->peer.start_time >= timeout))  //判断是否需要重新连接下一个后端服务器，不需要则直接返回错误给客户端
         {
 #if (NGX_HTTP_CACHE)
 
@@ -4542,7 +4542,7 @@ ngx_http_upstream_next(ngx_http_request_t *r, ngx_http_upstream_t *u,
         u->peer.connection = NULL;
     }
 
-    ngx_http_upstream_connect(r, u);//脭脵麓脦路垄脝冒脕卢陆脫
+    ngx_http_upstream_connect(r, u);//再次发起连接
 }
 
 
@@ -4557,7 +4557,7 @@ ngx_http_upstream_cleanup(void *data)
     ngx_http_upstream_finalize_request(r, r->upstream, NGX_DONE);
 }
 
-//ngx_http_upstream_create麓麓陆篓ngx_http_upstream_t拢卢脳脢脭麓禄脴脢脮脫脙ngx_http_upstream_finalize_request
+//ngx_http_upstream_create创建ngx_http_upstream_t，资源回收用ngx_http_upstream_finalize_request
 static void
 ngx_http_upstream_finalize_request(ngx_http_request_t *r,
     ngx_http_upstream_t *u, ngx_int_t rc)
@@ -4596,7 +4596,7 @@ ngx_http_upstream_finalize_request(ngx_http_request_t *r,
         u->peer.sockaddr = NULL;
     }
 
-    if (u->peer.connection) { //脠莽鹿没脢脟脡猫脰脙脕脣keepalive num脜盲脰脙拢卢脭貌脭脷ngx_http_upstream_free_keepalive_peer脰脨禄谩掳脩u->peer.connection脰脙脦陋NULL,卤脺脙芒鹿脴卤脮脕卢陆脫拢卢禄潞麓忙脝冒脌麓卤脺脙芒脰脴赂麓陆篓脕垄潞脥鹿脴卤脮脕卢陆脫
+    if (u->peer.connection) { //如果是设置了keepalive num配置，则在ngx_http_upstream_free_keepalive_peer中会把u->peer.connection置为NULL,避免关闭连接，缓存起来避免重复建立和关闭连接
 
 #if (NGX_HTTP_SSL)
 
@@ -4697,12 +4697,12 @@ ngx_http_upstream_finalize_request(ngx_http_request_t *r,
         flush = 1;
     }
 
-    if (r->header_only) { //脰禄路垄脣脥脥路虏驴脨脨拢卢脟毛脟贸潞贸露脣碌脛脥路虏驴脨脨脭脷ngx_http_upstream_send_response->ngx_http_send_header脪脩戮颅路垄脣脥
+    if (r->header_only) { //只发送头部行，请求后端的头部行在ngx_http_upstream_send_response->ngx_http_send_header已经发送
         ngx_http_finalize_request(r, rc);
         return;
     }
 
-    if (rc == 0) { //脣碌脙梅脢脟NGX_OK
+    if (rc == 0) { //说明是NGX_OK
         rc = ngx_http_send_special(r, NGX_HTTP_LAST);
 
     } else if (flush) {
@@ -4722,7 +4722,7 @@ ngx_http_upstream_process_header_line(ngx_http_request_t *r, ngx_table_elt_t *h,
 
     ph = (ngx_table_elt_t **) ((char *) &r->upstream->headers_in + offset);
 
-    if (*ph == NULL) { //脮芒赂枚戮脥脢脟录谩鲁脰r->upstream->headers_in脰脨碌脛offset鲁脡脭卤麓娄脢脟路帽脫脨麓忙路脜赂脙ngx_table_elt_t碌脛驴脮录盲
+    if (*ph == NULL) { //这个就是坚持r->upstream->headers_in中的offset成员处是否有存放该ngx_table_elt_t的空间
         *ph = h;
     }
 
@@ -4752,7 +4752,7 @@ ngx_http_upstream_process_content_length(ngx_http_request_t *r,
     return NGX_OK;
 }
 
-//掳脩脳脰路没麓庐脢卤录盲"2014-12-22 12:03:44"脳陋禄禄脦陋time_t脢卤录盲麓锚
+//把字符串时间"2014-12-22 12:03:44"转换为time_t时间搓
 static ngx_int_t
 ngx_http_upstream_process_last_modified(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset)
@@ -4856,7 +4856,7 @@ ngx_http_upstream_process_cache_control(ngx_http_request_t *r,
     start = h->value.data;
     last = start + h->value.len;
 
-    //脠莽鹿没Cache-Control虏脦脢媒脰碌脦陋no-cache隆垄no-store隆垄private脰脨脠脦脪芒脪禄赂枚脢卤拢卢脭貌虏禄禄潞麓忙...虏禄禄潞麓忙...
+    //如果Cache-Control参数值为no-cache、no-store、private中任意一个时，则不缓存...不缓存...
     if (ngx_strlcasestrn(start, last, (u_char *) "no-cache", 8 - 1) != NULL
         || ngx_strlcasestrn(start, last, (u_char *) "no-store", 8 - 1) != NULL
         || ngx_strlcasestrn(start, last, (u_char *) "private", 7 - 1) != NULL)
@@ -4866,7 +4866,7 @@ ngx_http_upstream_process_cache_control(ngx_http_request_t *r,
     }
 
     
-    //脠莽鹿没Cache-Control虏脦脢媒脰碌脦陋max-age脢卤拢卢禄谩卤禄禄潞麓忙拢卢脟脪nginx脡猫脰脙碌脛cache碌脛鹿媒脝脷脢卤录盲拢卢戮脥脢脟脧碌脥鲁碌卤脟掳脢卤录盲 + mag-age碌脛脰碌
+    //如果Cache-Control参数值为max-age时，会被缓存，且nginx设置的cache的过期时间，就是系统当前时间 + mag-age的值
     p = ngx_strlcasestrn(start, last, (u_char *) "s-maxage=", 9 - 1);
     offset = 9;
 
@@ -4947,7 +4947,7 @@ ngx_http_upstream_process_expires(ngx_http_request_t *r, ngx_table_elt_t *h,
     return NGX_OK;
 }
 
-//虏脦驴录http://blog.csdn.net/clh604/article/details/9064641
+//参考http://blog.csdn.net/clh604/article/details/9064641
 static ngx_int_t
 ngx_http_upstream_process_accel_expires(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset)
@@ -4955,7 +4955,7 @@ ngx_http_upstream_process_accel_expires(ngx_http_request_t *r,
     ngx_http_upstream_t  *u;
 
     u = r->upstream;
-    u->headers_in.x_accel_expires = h; //潞贸露脣脨炉麓酶脫脨"x_accel_expires"脥路虏驴脨脨
+    u->headers_in.x_accel_expires = h; //后端携带有"x_accel_expires"头部行
 
 #if (NGX_HTTP_CACHE)
     {
@@ -5115,7 +5115,7 @@ ngx_http_upstream_process_transfer_encoding(ngx_http_request_t *r,
     return NGX_OK;
 }
 
-//潞贸露脣路碌禄脴碌脛脥路虏驴脨脨麓酶脫脨vary:xxx  ngx_http_upstream_process_vary
+//后端返回的头部行带有vary:xxx  ngx_http_upstream_process_vary
 static ngx_int_t
 ngx_http_upstream_process_vary(ngx_http_request_t *r,
     ngx_table_elt_t *h, ngx_uint_t offset)
@@ -5203,7 +5203,7 @@ ngx_http_upstream_copy_multi_header_lines(ngx_http_request_t *r,
     return NGX_OK;
 }
 
-//Content-Type:text/html;charset=ISO-8859-1陆芒脦枚卤脿脗毛路陆脢陆麓忙碌陆r->headers_out.charset
+//Content-Type:text/html;charset=ISO-8859-1解析编码方式存到r->headers_out.charset
 static ngx_int_t
 ngx_http_upstream_copy_content_type(ngx_http_request_t *r, ngx_table_elt_t *h,
     ngx_uint_t offset)
@@ -5283,19 +5283,19 @@ ngx_http_upstream_copy_last_modified(ngx_http_request_t *r, ngx_table_elt_t *h,
     return NGX_OK;
 }
 
-//脠莽鹿没陆脫脢脺碌陆碌脛潞贸露脣脥路虏驴脨脨脰脨脰赂露篓脫脨location:xxx脥路虏驴脨脨拢卢脭貌脨猫脪陋陆酶脨脨脰脴露篓脧貌拢卢虏脦驴录proxy_redirect
+//如果接受到的后端头部行中指定有location:xxx头部行，则需要进行重定向，参考proxy_redirect
 /*
-location /proxy1/ {			
-    proxy_pass  http://10.10.0.103:8080/; 		
+location /proxy1/ {         
+    proxy_pass  http://10.10.0.103:8080/;       
 }
 
-脠莽鹿没url脦陋http://10.2.13.167/proxy1/拢卢脭貌ngx_http_upstream_rewrite_location麓娄脌铆潞贸拢卢
-潞贸露脣路碌禄脴Location: http://10.10.0.103:8080/secure/MyJiraHome.jspa
-脭貌脢碌录脢路垄脣脥赂酶盲炉脌脌脝梅驴脥禄搂露脣碌脛headers_out.headers.location脦陋http://10.2.13.167/proxy1/secure/MyJiraHome.jspa
+如果url为http://10.2.13.167/proxy1/，则ngx_http_upstream_rewrite_location处理后，
+后端返回Location: http://10.10.0.103:8080/secure/MyJiraHome.jspa
+则实际发送给浏览器客户端的headers_out.headers.location为http://10.2.13.167/proxy1/secure/MyJiraHome.jspa
 */
 static ngx_int_t
 ngx_http_upstream_rewrite_location(ngx_http_request_t *r, ngx_table_elt_t *h,
-    ngx_uint_t offset) //ngx_http_upstream_headers_in脰脨碌脛鲁脡脭卤copy_handler
+    ngx_uint_t offset) //ngx_http_upstream_headers_in中的成员copy_handler
 {
     ngx_int_t         rc;
     ngx_table_elt_t  *ho;
@@ -5915,19 +5915,19 @@ server {
 
 max_fails=number
 
-  脡猫脰脙脭脷fail_timeout虏脦脢媒脡猫脰脙碌脛脢卤录盲脛脷脳卯麓贸脢搂掳脺麓脦脢媒拢卢脠莽鹿没脭脷脮芒赂枚脢卤录盲脛脷拢卢脣霉脫脨脮毛露脭赂脙路镁脦帽脝梅碌脛脟毛脟贸
-  露录脢搂掳脺脕脣拢卢脛脟脙麓脠脧脦陋赂脙路镁脦帽脝梅禄谩卤禄脠脧脦陋脢脟脥拢禄煤脕脣拢卢脥拢禄煤脢卤录盲脢脟fail_timeout脡猫脰脙碌脛脢卤录盲隆拢脛卢脠脧脟茅驴枚脧脗拢卢
-  虏禄鲁脡鹿娄脕卢陆脫脢媒卤禄脡猫脰脙脦陋1隆拢卤禄脡猫脰脙脦陋脕茫脭貌卤铆脢戮虏禄陆酶脨脨脕麓陆脫脢媒脥鲁录脝隆拢脛脟脨漏脕卢陆脫卤禄脠脧脦陋脢脟虏禄鲁脡鹿娄碌脛驴脡脪脭脥篓鹿媒
-  proxy_next_upstream, fastcgi_next_upstream拢卢潞脥memcached_next_upstream脰赂脕卯脜盲脰脙隆拢http_404
-  脳麓脤卢虏禄禄谩卤禄脠脧脦陋脢脟虏禄鲁脡鹿娄碌脛鲁垄脢脭隆拢
+  设置在fail_timeout参数设置的时间内最大失败次数，如果在这个时间内，所有针对该服务器的请求
+  都失败了，那么认为该服务器会被认为是停机了，停机时间是fail_timeout设置的时间。默认情况下，
+  不成功连接数被设置为1。被设置为零则表示不进行链接数统计。那些连接被认为是不成功的可以通过
+  proxy_next_upstream, fastcgi_next_upstream，和memcached_next_upstream指令配置。http_404
+  状态不会被认为是不成功的尝试。
 
 fail_time=time
-  脡猫脰脙 露脿鲁陇脢卤录盲脛脷脢搂掳脺麓脦脢媒麓茂碌陆脳卯麓贸脢搂掳脺麓脦脢媒禄谩卤禄脠脧脦陋路镁脦帽脝梅脥拢禄煤脕脣路镁脦帽脝梅禄谩卤禄脠脧脦陋脥拢禄煤碌脛脢卤录盲鲁陇露脠 脛卢脠脧脟茅驴枚脧脗拢卢鲁卢脢卤脢卤录盲卤禄脡猫脰脙脦陋10S
+  设置 多长时间内失败次数达到最大失败次数会被认为服务器停机了服务器会被认为停机的时间长度 默认情况下，超时时间被设置为10S
 
 */
 static char *
 ngx_http_upstream(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
-{//碌卤脜枚碌陆upstream{}脰赂脕卯碌脛脢卤潞貌碌梅脫脙脮芒脌茂隆拢
+{//当碰到upstream{}指令的时候调用这里。
     char                          *rv;
     void                          *mconf;
     ngx_str_t                     *value;
@@ -5941,11 +5941,11 @@ ngx_http_upstream(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
     ngx_memzero(&u, sizeof(ngx_url_t));
 
     value = cf->args->elts;
-    u.host = value[1]; //upstream backend { }脰脨碌脛backend
+    u.host = value[1]; //upstream backend { }中的backend
     u.no_resolve = 1;
     u.no_port = 1;
 
-    //脧脗脙忙陆芦u麓煤卤铆碌脛脢媒戮脻脡猫脰脙碌陆umcf->upstreams脌茂脙忙脠楼隆拢脠禄潞贸路碌禄脴露脭脫娄碌脛upstream{}陆谩鹿鹿脢媒戮脻脰赂脮毛隆拢
+    //下面将u代表的数据设置到umcf->upstreams里面去。然后返回对应的upstream{}结构数据指针。
     uscf = ngx_http_upstream_add(cf, &u, NGX_HTTP_UPSTREAM_CREATE
                                          |NGX_HTTP_UPSTREAM_WEIGHT
                                          |NGX_HTTP_UPSTREAM_MAX_FAILS
@@ -5963,7 +5963,7 @@ ngx_http_upstream(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
     }
 
     http_ctx = cf->ctx;
-    ctx->main_conf = http_ctx->main_conf; //禄帽脠隆赂脙upstream xxx{}脣霉麓娄碌脛http{}
+    ctx->main_conf = http_ctx->main_conf; //获取该upstream xxx{}所处的http{}
 
     /* the upstream{}'s srv_conf */
 
@@ -5983,7 +5983,7 @@ ngx_http_upstream(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
         return NGX_CONF_ERROR;
     }
 
-    //赂脙upstream{}脰脨驴脡脪脭脜盲脰脙脣霉脫脨碌脛loc录露卤冒脛拢驴茅碌脛脜盲脰脙脨脜脧垄拢卢脪貌麓脣脦陋脙驴赂枚脛拢驴茅麓麓陆篓露脭脫娄碌脛麓忙麓垄驴脮录盲
+    //该upstream{}中可以配置所有的loc级别模块的配置信息，因此为每个模块创建对应的存储空间
     for (m = 0; ngx_modules[m]; m++) {
         if (ngx_modules[m]->type != NGX_HTTP_MODULE) {
             continue;
@@ -6019,13 +6019,13 @@ ngx_http_upstream(ngx_conf_t *cf, ngx_command_t *cmd, void *dummy)
 
     /* parse inside upstream{} */
 
-    pcf = *cf;   //卤拢麓忙upstream{}脣霉麓娄碌脛ctx
-    cf->ctx = ctx;//脕脵脢卤脟脨禄禄ctx拢卢陆酶脠毛upstream{}驴茅脰脨陆酶脨脨陆芒脦枚隆拢
+    pcf = *cf;   //保存upstream{}所处的ctx
+    cf->ctx = ctx;//临时切换ctx，进入upstream{}块中进行解析。
     cf->cmd_type = NGX_HTTP_UPS_CONF;
 
     rv = ngx_conf_parse(cf, NULL);
 
-    *cf = pcf; //upstream{}脛脷虏驴脜盲脰脙陆芒脦枚脥锚卤脧潞贸拢卢禄脰赂麓碌陆脰庐脟掳碌脛cf
+    *cf = pcf; //upstream{}内部配置解析完毕后，恢复到之前的cf
 
     if (rv != NGX_CONF_OK) {
         return rv;
@@ -6191,7 +6191,7 @@ ngx_http_upstream_add(ngx_conf_t *cf, ngx_url_t *u, ngx_uint_t flags)
 
     if (!(flags & NGX_HTTP_UPSTREAM_CREATE)) {
 
-        if (ngx_parse_url(cf->pool, u) != NGX_OK) { //陆芒脦枚uri拢卢脠莽鹿没uri脢脟IP:PORT脨脦脢陆脭貌禄帽脠隆脣没脙脟拢卢脠莽鹿没脢脟脫貌脙没www.xxx.com脨脦脢陆拢卢脭貌陆芒脦枚脫貌脙没
+        if (ngx_parse_url(cf->pool, u) != NGX_OK) { //解析uri，如果uri是IP:PORT形式则获取他们，如果是域名www.xxx.com形式，则解析域名
             if (u->err) {
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                                    "%s in upstream \"%V\"", u->err, &u->url);
@@ -6205,7 +6205,7 @@ ngx_http_upstream_add(ngx_conf_t *cf, ngx_url_t *u, ngx_uint_t flags)
 
     uscfp = umcf->upstreams.elts;
 
-    //卤茅脌煤碌卤脟掳碌脛upstream拢卢脠莽鹿没脫脨脰脴赂麓碌脛拢卢脭貌卤脠陆脧脝盲脧脿鹿脴碌脛脳脰露脦拢卢虏垄麓貌脫隆脠脮脰戮隆拢脠莽鹿没脮脪碌陆脧脿脥卢碌脛拢卢脭貌路碌禄脴露脭脫娄脰赂脮毛隆拢脙禄脮脪碌陆脭貌脭脷潞贸脙忙麓麓陆篓
+    //遍历当前的upstream，如果有重复的，则比较其相关的字段，并打印日志。如果找到相同的，则返回对应指针。没找到则在后面创建
     for (i = 0; i < umcf->upstreams.nelts; i++) {
 
         if (uscfp[i]->host.len != u->host.len
@@ -6254,7 +6254,7 @@ ngx_http_upstream_add(ngx_conf_t *cf, ngx_url_t *u, ngx_uint_t flags)
             uscfp[i]->flags = flags;
         }
 
-        return uscfp[i];//脮脪碌陆脧脿脥卢碌脛脜盲脰脙脢媒戮脻脕脣拢卢脰卤陆脫路碌禄脴脣眉碌脛脰赂脮毛隆拢
+        return uscfp[i];//找到相同的配置数据了，直接返回它的指针。
     }
 
     uscf = ngx_pcalloc(cf->pool, sizeof(ngx_http_upstream_srv_conf_t));
@@ -6264,13 +6264,13 @@ ngx_http_upstream_add(ngx_conf_t *cf, ngx_url_t *u, ngx_uint_t flags)
 
     uscf->flags = flags;
     uscf->host = u->host;
-    uscf->file_name = cf->conf_file->file.name.data; //脜盲脰脙脦脛录镁脙没鲁脝
+    uscf->file_name = cf->conf_file->file.name.data; //配置文件名称
     uscf->line = cf->conf_file->line;
     uscf->port = u->port;
     uscf->default_port = u->default_port;
     uscf->no_port = u->no_port;
 
-    //卤脠脠莽: server xx.xx.xx.xx:xx weight=2 max_fails=3;  赂脮驴陋脢录拢卢ngx_http_upstream禄谩碌梅脫脙卤戮潞炉脢媒隆拢碌芦脢脟脝盲naddres=0.
+    //比如: server xx.xx.xx.xx:xx weight=2 max_fails=3;  刚开始，ngx_http_upstream会调用本函数。但是其naddres=0.
     if (u->naddrs == 1 && (u->port || u->family == AF_UNIX)) {
         uscf->servers = ngx_array_create(cf->pool, 1,
                                          sizeof(ngx_http_upstream_server_t));
@@ -6278,7 +6278,7 @@ ngx_http_upstream_add(ngx_conf_t *cf, ngx_url_t *u, ngx_uint_t flags)
             return NULL;
         }
 
-        us = ngx_array_push(uscf->servers);//录脟脗录卤戮upstream{}驴茅碌脛脣霉脫脨server脰赂脕卯隆拢
+        us = ngx_array_push(uscf->servers);//记录本upstream{}块的所有server指令。
         if (us == NULL) {
             return NULL;
         }
@@ -6422,7 +6422,7 @@ ngx_http_upstream_get_local(ngx_http_request_t *r,
     }
 }
 
-//fastcgi_param  Params脢媒戮脻掳眉拢卢脫脙脫脷麓芦碌脻脰麓脨脨脪鲁脙忙脣霉脨猫脪陋碌脛虏脦脢媒潞脥禄路戮鲁卤盲脕驴隆拢
+//fastcgi_param  Params数据包，用于传递执行页面所需要的参数和环境变量。
 char *
 ngx_http_upstream_param_set_slot(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf) //uboot.din
@@ -6433,7 +6433,7 @@ ngx_http_upstream_param_set_slot(ngx_conf_t *cf, ngx_command_t *cmd,
     ngx_array_t                **a;
     ngx_http_upstream_param_t   *param;
 
-    //fastcgi_param脡猫脰脙碌脛麓芦脣脥碌陆FastCGI路镁脦帽脝梅碌脛脧脿鹿脴虏脦脢媒露录脤铆录脫碌陆赂脙脢媒脳茅脰脨拢卢录没ngx_http_upstream_param_set_slot
+    //fastcgi_param设置的传送到FastCGI服务器的相关参数都添加到该数组中，见ngx_http_upstream_param_set_slot
     a = (ngx_array_t **) (p + cmd->offset);//ngx_http_fastcgi_loc_conf_t->params_source
 
     if (*a == NULL) {
@@ -6461,7 +6461,7 @@ ngx_http_upstream_param_set_slot(ngx_conf_t *cf, ngx_command_t *cmd,
             return NGX_CONF_ERROR;
         }
 
-        param->skip_empty = 1; //潞脥ngx_http_fastcgi_init_params脜盲潞脧脭脛露脕拢卢脠莽鹿没脡猫脰脙脕脣赂脙脰碌拢卢虏垄脟脪value虏驴路脰脦陋0拢卢脭貌脰卤陆脫虏禄脢鹿脫脙麓脣卤盲脕驴
+        param->skip_empty = 1; //和ngx_http_fastcgi_init_params配合阅读，如果设置了该值，并且value部分为0，则直接不使用此变量
     }
 
     return NGX_CONF_OK;
@@ -6488,7 +6488,7 @@ ngx_http_upstream_hide_headers_hash(ngx_conf_t *cf,
 
         if (conf->hide_headers_hash.buckets
 #if (NGX_HTTP_CACHE)
-            && ((conf->cache == 0) == (prev->cache == 0)) //脪脩戮颅脳枚鹿媒hash脭脣脣茫脕脣
+            && ((conf->cache == 0) == (prev->cache == 0)) //已经做过hash运算了
 #endif
            )
         {
@@ -6511,7 +6511,7 @@ ngx_http_upstream_hide_headers_hash(ngx_conf_t *cf,
         return NGX_ERROR;
     }
 
-    for (h = default_hide_headers; h->len; h++) { //掳脩default_hide_headers脰脨碌脛脭陋脣脴赂鲁脰碌赂酶hide_headers脢媒脳茅脰脨
+    for (h = default_hide_headers; h->len; h++) { //把default_hide_headers中的元素赋值给hide_headers数组中
         hk = ngx_array_push(&hide_headers);
         if (hk == NULL) {
             return NGX_ERROR;
@@ -6522,7 +6522,7 @@ ngx_http_upstream_hide_headers_hash(ngx_conf_t *cf,
         hk->value = (void *) 1;
     }
 
-    if (conf->hide_headers != NGX_CONF_UNSET_PTR) { //proxy_hide_header  fastcgi_hide_header脜盲脰脙碌脛脧脿鹿脴脨脜脧垄脪虏脪陋脤铆录脫碌陆hide_headers脢媒脳茅
+    if (conf->hide_headers != NGX_CONF_UNSET_PTR) { //proxy_hide_header  fastcgi_hide_header配置的相关信息也要添加到hide_headers数组
 
         h = conf->hide_headers->elts;
 
@@ -6551,8 +6551,8 @@ ngx_http_upstream_hide_headers_hash(ngx_conf_t *cf,
         }
     }
 
-    //脠莽鹿没hide_headers脫脨脧脿鹿脴脨脜脧垄拢卢卤铆脢戮脨猫脪陋脫掳虏脴拢卢碌楼xxx_pass_header脰脨脫脨脡猫脰脙脕脣虏禄脪镁虏脴拢卢脭貌脛卢脠脧赂脙脨脜脧垄禄鹿脢脟脫掳虏脴拢卢掳脩pass_header脰脨碌脛赂脙脧卯脠楼碌么
-    if (conf->pass_headers != NGX_CONF_UNSET_PTR) { //proxy_pass_headers  fastcgi_pass_headers脜盲脰脙碌脛脧脿鹿脴脨脜脧垄麓脫hide_headers脢媒脳茅
+    //如果hide_headers有相关信息，表示需要影藏，单xxx_pass_header中有设置了不隐藏，则默认该信息还是影藏，把pass_header中的该项去掉
+    if (conf->pass_headers != NGX_CONF_UNSET_PTR) { //proxy_pass_headers  fastcgi_pass_headers配置的相关信息从hide_headers数组
 
         h = conf->pass_headers->elts;
         hk = hide_headers.elts;
@@ -6572,8 +6572,8 @@ ngx_http_upstream_hide_headers_hash(ngx_conf_t *cf,
         }
     }
 
-    //掳脩default_hide_headers(ngx_http_proxy_hide_headers  ngx_http_fastcgi_hide_headers)脰脨碌脛鲁脡脭卤脳枚hash卤拢麓忙碌陆conf->hide_headers_hash
-    hash->hash = &conf->hide_headers_hash; //掳脩脛卢脠脧碌脛default_hide_headers  xxx_pass_headers脜盲脰脙碌脛 
+    //把default_hide_headers(ngx_http_proxy_hide_headers  ngx_http_fastcgi_hide_headers)中的成员做hash保存到conf->hide_headers_hash
+    hash->hash = &conf->hide_headers_hash; //把默认的default_hide_headers  xxx_pass_headers配置的 
     hash->key = ngx_hash_key_lc;
     hash->pool = cf->pool;
     hash->temp_pool = NULL;
@@ -6623,7 +6623,7 @@ ngx_http_upstream_init_main_conf(ngx_conf_t *cf, void *conf)
         init = uscfp[i]->peer.init_upstream ? uscfp[i]->peer.init_upstream:
                                             ngx_http_upstream_init_round_robin;
 
-        if (init(cf, uscfp[i]) != NGX_OK) { //脰麓脨脨init_upstream
+        if (init(cf, uscfp[i]) != NGX_OK) { //执行init_upstream
             return NGX_CONF_ERROR;
         }
     }
